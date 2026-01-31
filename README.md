@@ -1,16 +1,192 @@
-# React + Vite
+# PulseGuard 🚀
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> Monitorización de servicios en tiempo real con estilo
 
-Currently, two official plugins are available:
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38B2AC?logo=tailwind-css)](https://tailwindcss.com/)
+[![Express](https://img.shields.io/badge/Express-4-000000?logo=express)](https://expressjs.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-5-2D3748?logo=prisma)](https://prisma.io/)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+PulseGuard es una aplicación full-stack moderna para monitorizar el estado de tus servicios web en tiempo real. Con una interfaz elegante y dark mode, atajos de teclado, y un sistema de verificación automática configurable.
 
-## React Compiler
+![Dashboard Preview](https://via.placeholder.com/800x400/1e293b/ffffff?text=PulseGuard+Dashboard)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ✨ Características
 
-## Expanding the ESLint configuration
+### 🎯 Core
+- **Monitorización en tiempo real** - Verifica el estado de tus servicios automáticamente
+- **Intervalos configurables** - Desde 10 segundos hasta 1 hora
+- **Histórico de logs** - Registro completo de todas las verificaciones
+- **Múltiples estados** - Online, Offline, Degradado, Timeout, Desconocido
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 🎨 UI/UX
+- **Dark/Light mode** - Cambio instantáneo con persistencia
+- **Modo compacto** - Para monitoreo constante con muchos servicios
+- **Vista Grid/Lista** - Adapta la visualización a tus necesidades
+- **Command Palette** - Búsqueda global con `Ctrl+K`
+- **Atajos de teclado** - Navegación rápida sin ratón
+- **Animaciones fluidas** - Transiciones suaves en toda la app
+
+### 🛠️ Funcionalidades
+- **Filtros avanzados** - Por estado, nombre, tiempo de respuesta
+- **Ordenamiento** - Por nombre, estado, uptime, última verificación
+- **Exportación de datos** - JSON y CSV
+- **Soft delete** - Elimina servicios preservando el historial
+- **Onboarding interactivo** - Tutorial para nuevos usuarios
+
+## 🚀 Instalación
+
+### Requisitos
+- Node.js 18+
+- npm o yarn
+
+### Pasos
+
+1. **Clonar el repositorio**
+```bash
+git clone https://github.com/marchanero/PulseGuard.git
+cd PulseGuard
+```
+
+2. **Instalar dependencias**
+```bash
+npm install
+```
+
+3. **Configurar la base de datos**
+```bash
+npx prisma migrate dev
+```
+
+4. **Iniciar la aplicación**
+```bash
+npm run dev
+```
+
+Esto iniciará:
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:3001
+
+## ⌨️ Atajos de Teclado
+
+| Atajo | Acción |
+|-------|--------|
+| `Ctrl + N` | Añadir nuevo servicio |
+| `Ctrl + K` | Abrir Command Palette |
+| `/` | Buscar servicios |
+| `Esc` | Cerrar modales/drawers |
+| `G` | Cambiar vista (Grid/Lista) |
+| `F` | Abrir/cerrar filtros |
+| `R` | Refrescar datos |
+| `C` | Toggle modo compacto |
+| `?` | Mostrar ayuda de atajos |
+
+## 📁 Estructura del Proyecto
+
+```
+PulseGuard/
+├── prisma/                 # Base de datos y migraciones
+│   ├── schema.prisma      # Esquema de Prisma
+│   └── migrations/        # Migraciones de la BD
+├── server/                # Backend API
+│   ├── api/              # Rutas de la API
+│   ├── utils/            # Utilidades (health checks, monitor)
+│   └── index.js          # Entry point del servidor
+├── src/                   # Frontend React
+│   ├── components/       # Componentes React
+│   ├── context/          # Contextos (tema, toast, confirm)
+│   ├── hooks/            # Custom hooks
+│   └── utils/            # Utilidades frontend
+└── package.json
+```
+
+## 🔧 Configuración
+
+### Variables de entorno
+
+Crea un archivo `.env` en la raíz:
+
+```env
+# Puerto del servidor backend
+PORT=3001
+
+# URL de la base de datos
+DATABASE_URL="file:./prisma/dev.db"
+```
+
+### Intervalos de verificación
+
+Puedes configurar el intervalo de verificación para cada servicio:
+- 10 segundos (para servicios críticos)
+- 30 segundos
+- 1 minuto
+- 5 minutos
+- 15 minutos
+- 30 minutos
+- 1 hora
+
+## 📊 API Endpoints
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/services` | Listar todos los servicios |
+| POST | `/api/services` | Crear nuevo servicio |
+| GET | `/api/services/:id` | Obtener servicio por ID |
+| PUT | `/api/services/:id` | Actualizar servicio |
+| DELETE | `/api/services/:id` | Eliminar servicio (soft delete) |
+| POST | `/api/services/:id/check` | Verificar servicio manualmente |
+| POST | `/api/services/check-all` | Verificar todos los servicios |
+| POST | `/api/services/:id/restore` | Restaurar servicio eliminado |
+| DELETE | `/api/services/:id/permanent` | Eliminar permanentemente |
+
+## 🛣️ Roadmap
+
+### Próximas mejoras
+- [ ] **Notificaciones** - Email, Slack, Discord webhooks
+- [ ] **Autenticación** - Sistema de usuarios y roles
+- [ ] **Status Page pública** - Página de estado para tus clientes
+- [ ] **Múltiples ubicaciones** - Checks desde diferentes regiones
+- [ ] **SSL Certificate monitoring** - Alertas de expiración de certificados
+- [ ] **Docker** - Contenedores para fácil despliegue
+
+Consulta [`IMPROVEMENTS.md`](IMPROVEMENTS.md) para la lista completa.
+
+## 🛡️ Tecnologías
+
+### Frontend
+- **React 18** - UI library
+- **Vite** - Build tool ultrarrápido
+- **Tailwind CSS** - Framework de estilos
+- **Lucide React** - Iconos
+- **Recharts** - Gráficos y estadísticas
+
+### Backend
+- **Express.js** - Framework web
+- **Prisma ORM** - Base de datos
+- **SQLite** - Base de datos ligera
+- **Node-cron** - Tareas programadas
+
+## 🤝 Contribuir
+
+Las contribuciones son bienvenidas. Por favor:
+
+1. Fork el repositorio
+2. Crea una rama (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit tus cambios (`git commit -am 'Añadir nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Abre un Pull Request
+
+## 📝 Licencia
+
+Este proyecto está bajo la licencia MIT. Ver [LICENSE](LICENSE) para más detalles.
+
+## 👨‍💻 Autor
+
+**Roberto Sánchez** - [@marchanero](https://github.com/marchanero)
+
+---
+
+<p align="center">
+  <strong>⭐ Star este repo si te ha sido útil!</strong>
+</p>
