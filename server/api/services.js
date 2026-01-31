@@ -1,0 +1,360 @@
+import express from 'express';
+import prisma from '../lib/prisma.js';
+import { checkServiceHealth } from '../utils/healthCheck.js';
+import { startMonitoring, stopMonitoring } from '../utils/monitor.js';
+
+const router = express.Router();
+
+// Obtener todos los servicios activos (no eliminados)
+router.get('/', async (req, res) => {
+  try {
+    const services = await prisma.service.findMany({
+      where: { isDeleted: false },
+      include: {
+        logs: {
+          orderBy: { timestamp: 'desc' },
+          take: 10
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(services);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener servicios', message: error.message });
+  }
+});
+
+// Obtener servicios archivados (eliminados)
+router.get('/archived', async (req, res) => {
+  try {
+    const services = await prisma.service.findMany({
+      where: { isDeleted: true },
+      include: {
+        logs: {
+          orderBy: { timestamp: 'desc' },
+          take: 10
+        }
+      },
+      orderBy: { deletedAt: 'desc' }
+    });
+    res.json(services);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener servicios archivados', message: error.message });
+  }
+});
+
+// Obtener un servicio por ID
+router.get('/:id', async (req, res) => {
+  try {
+    const service = await prisma.service.findUnique({
+      where: { id: parseInt(req.params.id) },
+      include: {
+        logs: {
+          orderBy: { timestamp: 'desc' },
+          take: 50
+        }
+      }
+    });
+    
+    if (!service) {
+      return res.status(404).json({ error: 'Servicio no encontrado' });
+    }
+    
+    res.json(service);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener servicio', message: error.message });
+  }
+});
+
+// Crear un nuevo servicio
+router.post('/', async (req, res) => {
+  try {
+    const { name, url, description, checkInterval, isActive } = req.body;
+    
+    if (!name || !url) {
+      return res.status(400).json({ error: 'Nombre y URL son requeridos' });
+    }
+    
+    // Validar checkInterval (mínimo 10 segundos, máximo 1 hora)
+    const interval = checkInterval ? parseInt(checkInterval) : 60;
+    if (interval < 10 || interval > 3600) {
+      return res.status(400).json({ error: 'El intervalo debe estar entre 10 segundos y 1 hora (3600s)' });
+    }
+    
+    const newService = await prisma.service.create({
+      data: {
+        name,
+        url,
+        description: description || '',
+        checkInterval: interval,
+        isActive: isActive !== undefined ? isActive : true,
+        status: 'unknown',
+        uptime: 100
+      }
+    });
+    
+    // Iniciar monitoreo automático si está activo
+    if (newService.isActive) {
+      startMonitoring(newService);
+    }
+    
+    res.status(201).json(newService);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al crear servicio', message: error.message });
+  }
+});
+
+// Actualizar un servicio
+router.put('/:id', async (req, res) => {
+  try {
+    const { name, url, description, checkInterval, isActive } = req.body;
+    
+    // Obtener el servicio actual
+    const currentService = await prisma.service.findUnique({
+      where: { id: parseInt(req.params.id) }
+    });
+    
+    if (!currentService) {
+      return res.status(404).json({ error: 'Servicio no encontrado' });
+    }
+    
+    // Validar checkInterval si se proporciona
+    let interval;
+    if (checkInterval !== undefined) {
+      interval = parseInt(checkInterval);
+      if (interval < 10 || interval > 3600) {
+        return res.status(400).json({ error: 'El intervalo debe estar entre 10 segundos y 1 hora (3600s)' });
+      }
+    }
+    
+    const updatedService = await prisma.service.update({
+      where: { id: parseInt(req.params.id) },
+      data: {
+        ...(name && { name }),
+        ...(url && { url }),
+        ...(description !== undefined && { description }),
+        ...(interval && { checkInterval: interval }),
+        ...(isActive !== undefined && { isActive })
+      }
+    });
+    
+    // Manejar el monitoreo según el estado
+    if (isActive !== undefined) {
+      if (isActive) {
+        startMonitoring(updatedService);
+      } else {
+        stopMonitoring(updatedService.id);
+      }
+    } else if (updatedService.isActive && (checkInterval || url)) {
+      // Si cambió el intervalo o URL, reiniciar monitoreo
+      startMonitoring(updatedService);
+    }
+    
+    res.json(updatedService);
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Servicio no encontrado' });
+    }
+    res.status(500).json({ error: 'Error al actualizar servicio', message: error.message });
+  }
+});
+
+// Archivar un servicio (soft delete)
+router.delete('/:id', async (req, res) => {
+  try {
+    const serviceId = parseInt(req.params.id);
+    
+    // Detener monitoreo antes de archivar
+    stopMonitoring(serviceId);
+    
+    // Soft delete - marcar como eliminado pero mantener en BD
+    await prisma.service.update({
+      where: { id: serviceId },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+        isActive: false // Desactivar monitoreo
+      }
+    });
+    
+    res.status(204).send();
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Servicio no encontrado' });
+    }
+    res.status(500).json({ error: 'Error al archivar servicio', message: error.message });
+  }
+});
+
+// Restaurar un servicio archivado
+router.post('/:id/restore', async (req, res) => {
+  try {
+    const serviceId = parseInt(req.params.id);
+    
+    const service = await prisma.service.update({
+      where: { id: serviceId },
+      data: {
+        isDeleted: false,
+        deletedAt: null,
+        isActive: true
+      }
+    });
+    
+    // Reiniciar monitoreo
+    if (service.isActive) {
+      startMonitoring(service);
+    }
+    
+    res.json(service);
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Servicio no encontrado' });
+    }
+    res.status(500).json({ error: 'Error al restaurar servicio', message: error.message });
+  }
+});
+
+// Eliminar permanentemente un servicio (hard delete)
+router.delete('/:id/permanent', async (req, res) => {
+  try {
+    const serviceId = parseInt(req.params.id);
+    
+    // Detener monitoreo
+    stopMonitoring(serviceId);
+    
+    // Eliminar permanentemente
+    await prisma.service.delete({
+      where: { id: serviceId }
+    });
+    
+    res.status(204).send();
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Servicio no encontrado' });
+    }
+    res.status(500).json({ error: 'Error al eliminar servicio permanentemente', message: error.message });
+  }
+});
+
+// Verificar el estado de un servicio (manual)
+router.post('/:id/check', async (req, res) => {
+  try {
+    const service = await prisma.service.findUnique({
+      where: { id: parseInt(req.params.id) }
+    });
+    
+    if (!service) {
+      return res.status(404).json({ error: 'Servicio no encontrado' });
+    }
+    
+    const result = await checkServiceHealth(service.url);
+    
+    const updatedService = await prisma.service.update({
+      where: { id: service.id },
+      data: {
+        status: result.status,
+        responseTime: result.responseTime,
+        lastChecked: new Date()
+      },
+      include: {
+        logs: {
+          orderBy: { timestamp: 'desc' },
+          take: 10
+        }
+      }
+    });
+    
+    // Crear log
+    await prisma.serviceLog.create({
+      data: {
+        serviceId: service.id,
+        status: result.status,
+        responseTime: result.responseTime,
+        message: result.message
+      }
+    });
+    
+    res.json(updatedService);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al verificar servicio', message: error.message });
+  }
+});
+
+// Verificar todos los servicios (manual)
+router.post('/check-all', async (req, res) => {
+  try {
+    const services = await prisma.service.findMany();
+    
+    await Promise.all(
+      services.map(async (service) => {
+        const result = await checkServiceHealth(service.url);
+        
+        await prisma.service.update({
+          where: { id: service.id },
+          data: {
+            status: result.status,
+            responseTime: result.responseTime,
+            lastChecked: new Date()
+          }
+        });
+        
+        await prisma.serviceLog.create({
+          data: {
+            serviceId: service.id,
+            status: result.status,
+            responseTime: result.responseTime,
+            message: result.message
+          }
+        });
+      })
+    );
+    
+    // Obtener servicios con sus logs
+    const servicesWithLogs = await prisma.service.findMany({
+      include: {
+        logs: {
+          orderBy: { timestamp: 'desc' },
+          take: 10
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    res.json(servicesWithLogs);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al verificar servicios', message: error.message });
+  }
+});
+
+// Toggle monitoreo activo/inactivo
+router.post('/:id/toggle', async (req, res) => {
+  try {
+    const service = await prisma.service.findUnique({
+      where: { id: parseInt(req.params.id) }
+    });
+    
+    if (!service) {
+      return res.status(404).json({ error: 'Servicio no encontrado' });
+    }
+    
+    const newIsActive = !service.isActive;
+    
+    const updatedService = await prisma.service.update({
+      where: { id: service.id },
+      data: { isActive: newIsActive }
+    });
+    
+    // Iniciar o detener monitoreo
+    if (newIsActive) {
+      startMonitoring(updatedService);
+    } else {
+      stopMonitoring(updatedService.id);
+    }
+    
+    res.json(updatedService);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al cambiar estado del servicio', message: error.message });
+  }
+});
+
+export default router;

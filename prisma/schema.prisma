@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Service {
+  id            Int      @id @default(autoincrement())
+  name          String
+  url           String
+  description   String?
+  status        String   @default("unknown")
+  responseTime  Int?
+  uptime        Float    @default(100)
+  lastChecked   DateTime?
+  checkInterval Int      @default(60) // Intervalo en segundos (por defecto 60s = 1 minuto)
+  isActive      Boolean  @default(true) // Si está activo el monitoreo automático
+  isDeleted     Boolean  @default(false) // Soft delete - servicio archivado
+  deletedAt     DateTime? // Fecha de eliminación
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  logs          ServiceLog[]
+}
+
+model ServiceLog {
+  id           Int      @id @default(autoincrement())
+  serviceId    Int
+  service      Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  timestamp    DateTime @default(now())
+  status       String
+  responseTime Int?
+  message      String?
+}
