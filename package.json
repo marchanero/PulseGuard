@@ -8,7 +8,17 @@
     "server": "nodemon server/index.js",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "test:api": "jest --config jest.config.api.js server/__tests__",
+    "test:unit": "jest src/",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "test:e2e": "start-server-and-test dev http://localhost:5173 cypress:run",
+    "test:e2e:open": "start-server-and-test dev http://localhost:5173 cypress:open"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -23,18 +33,31 @@
     "tailwindcss": "^3.4.19"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.29.0",
+    "@babel/preset-react": "^7.28.5",
     "@eslint/js": "^9.39.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.24",
+    "babel-jest": "^30.2.0",
     "concurrently": "^9.2.1",
+    "cypress": "^15.9.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "identity-obj-proxy": "^3.0.0",
+    "jest": "^30.2.0",
+    "jest-axe": "^10.0.0",
+    "jest-environment-jsdom": "^30.2.0",
     "nodemon": "^3.1.11",
     "postcss": "^8.5.6",
+    "start-server-and-test": "^2.1.3",
+    "supertest": "^7.2.2",
     "vite": "^7.2.4"
   }
 }

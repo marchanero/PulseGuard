@@ -1,0 +1,28 @@
+{
+  "services": [
+    {
+      "id": 1,
+      "name": "API Gateway",
+      "url": "https://api.example.com",
+      "status": "up",
+      "responseTime": 45,
+      "uptime": 99.9
+    },
+    {
+      "id": 2,
+      "name": "Auth Service",
+      "url": "https://auth.example.com",
+      "status": "down",
+      "responseTime": 0,
+      "uptime": 95.5
+    },
+    {
+      "id": 3,
+      "name": "Database",
+      "url": "https://db.example.com",
+      "status": "up",
+      "responseTime": 12,
+      "uptime": 99.99
+    }
+  ]
+}

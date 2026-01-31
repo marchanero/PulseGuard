@@ -177,6 +177,121 @@ Las contribuciones son bienvenidas. Por favor:
 4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
 5. Abre un Pull Request
 
+## 🧪 Testing
+
+PulseGuard cuenta con un sistema de testing completo configurado con Jest, React Testing Library, Supertest y Cypress.
+
+### Scripts de Testing
+
+```bash
+# Ejecutar todos los tests
+npm test
+
+# Tests en modo watch (desarrollo)
+npm run test:watch
+
+# Tests con cobertura
+npm run test:coverage
+
+# Tests solo de API
+npm run test:api
+
+# Tests solo de unidad (frontend)
+npm run test:unit
+
+# Tests E2E con Cypress
+npm run test:e2e
+
+# Abrir Cypress en modo interactivo
+npm run cypress:open
+```
+
+### Estructura de Tests
+
+```
+PulseGuard/
+├── src/
+│   ├── components/
+│   │   └── __tests__/           # Tests de componentes
+│   ├── hooks/
+│   │   └── __tests__/           # Tests de hooks
+│   └── utils/
+│       └── __tests__/           # Tests de utilidades
+├── server/
+│   └── __tests__/               # Tests de API
+├── cypress/
+│   ├── e2e/                     # Tests E2E
+│   ├── fixtures/                # Datos de prueba
+│   └── support/                 # Comandos y configuración
+├── __mocks__/                   # Mocks globales
+├── jest.config.js               # Configuración de Jest
+├── jest.setup.js                # Setup de Jest
+├── babel.config.js              # Configuración de Babel
+└── cypress.config.js            # Configuración de Cypress
+```
+
+### Tipos de Tests
+
+#### 1. Tests de Componentes (Jest + RTL)
+
+```bash
+npm test -- Button.test.jsx
+```
+
+Tests de componentes UI con React Testing Library y jest-axe para accesibilidad.
+
+#### 2. Tests de Hooks (Jest + RTL)
+
+```bash
+npm test -- useTheme.test.js
+```
+
+Tests de hooks personalizados usando `renderHook`.
+
+#### 3. Tests de API (Jest + Supertest)
+
+```bash
+npm run test:api
+```
+
+Tests de endpoints del backend con Supertest.
+
+#### 4. Tests E2E (Cypress)
+
+```bash
+# Modo headless
+npm run test:e2e
+
+# Modo interactivo
+npm run test:e2e:open
+```
+
+Tests de flujos completos de usuario.
+
+### Cobertura de Código
+
+Para generar un reporte de cobertura:
+
+```bash
+npm run test:coverage
+```
+
+El reporte se guarda en la carpeta `coverage/`.
+
+### Accesibilidad
+
+Los tests incluyen verificaciones de accesibilidad con jest-axe:
+
+```javascript
+import { axe } from 'jest-axe';
+
+it('has no accessibility violations', async () => {
+  const { container } = render(<Component />);
+  const results = await axe(container);
+  expect(results).toHaveNoViolations();
+});
+```
+
 ## 📝 Licencia
 
 Este proyecto está bajo la licencia MIT. Ver [LICENSE](LICENSE) para más detalles.
