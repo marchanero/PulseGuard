@@ -1,51 +1,35 @@
 import { useMemo } from 'react';
-import { Card } from './ui';
+import { Activity, CheckCircle2, XCircle, AlertTriangle, Clock, Zap, Server, TrendingUp, Percent } from 'lucide-react';
 
-// Componente StatCard separado para evitar error de ESLint
-const StatCard = ({ title, value, subtitle, icon, trend, color = 'blue' }) => {
-  const colors = {
-    blue: 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400',
-    emerald: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400',
-    red: 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400',
-    amber: 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400',
-    purple: 'bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400'
+// Stat Card minimalista
+const StatCard = ({ title, value, subtitle, icon: IconComponent, color = 'blue' }) => {
+  const colorClasses = {
+    emerald: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20',
+    red: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20',
+    amber: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20',
+    blue: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20',
+    purple: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20',
+    slate: 'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800'
   };
 
   return (
-    <Card className="relative overflow-hidden group py-4 px-4" hover>
-      <div className="relative z-10">
-        <div className="flex items-center justify-between mb-2">
-          <div className={`p-2 rounded-lg ${colors[color]}`}>
-            {icon}
-          </div>
-          {trend && (
-            <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${
-              trend > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-            }`}>
-              {trend > 0 ? '+' : ''}{trend}%
-            </span>
-          )}
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-center gap-3">
+        <div className={`w-10 h-10 rounded-lg ${colorClasses[color]} flex items-center justify-center`}>
+          {IconComponent && <IconComponent className="w-5 h-5" />}
         </div>
-        <div className="space-y-0.5">
-          <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
-            {value}
-          </h3>
-          <p className="text-xs font-medium text-slate-500 dark:text-gray-400">
-            {title}
-          </p>
-          {subtitle && (
-            <p className="text-[10px] text-slate-400 dark:text-gray-500">
-              {subtitle}
-            </p>
-          )}
+        <div>
+          <p className="text-xs text-slate-500 dark:text-gray-400 uppercase font-medium">{title}</p>
+          <p className="text-xl font-bold text-slate-900 dark:text-white">{value}</p>
+          {subtitle && <p className="text-[10px] text-slate-400 dark:text-gray-500">{subtitle}</p>}
         </div>
       </div>
-    </Card>
+    </div>
   );
 };
 
-// Barra de progreso para distribución
-const StatusBar = ({ label, count, total, color }) => {
+// Mini barra de progreso
+const MiniStatusBar = ({ label, count, total, color }) => {
   const percentage = total > 0 ? (count / total) * 100 : 0;
   
   const colorClasses = {
@@ -56,19 +40,20 @@ const StatusBar = ({ label, count, total, color }) => {
   };
 
   return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-xs">
-        <span className="font-medium text-slate-600 dark:text-gray-400">{label}</span>
-        <span className="text-slate-500 dark:text-gray-500">
-          {count} ({percentage.toFixed(0)}%)
-        </span>
+    <div className="flex items-center gap-3">
+      <div className="flex-1">
+        <div className="flex items-center justify-between text-xs mb-1">
+          <span className="text-slate-600 dark:text-gray-400">{label}</span>
+          <span className="text-slate-500 dark:text-gray-500 font-medium">{count}</span>
+        </div>
+        <div className="h-2 bg-slate-100 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div 
+            className={`h-full ${colorClasses[color]} rounded-full transition-all duration-500`}
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
       </div>
-      <div className="h-1.5 bg-slate-100 dark:bg-gray-700 rounded-full overflow-hidden">
-        <div 
-          className={`h-full ${colorClasses[color]} rounded-full transition-all duration-500`}
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
+      <span className="text-xs text-slate-400 dark:text-gray-500 w-10 text-right">{percentage.toFixed(0)}%</span>
     </div>
   );
 };
@@ -127,89 +112,96 @@ function DashboardStats({ services, isCompact }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <StatCard
-          title="Total Servicios"
+          title="Total"
           value={stats.total}
-          subtitle={`${stats.online} activos`}
+          subtitle={`${stats.online} online`}
+          icon={Server}
           color="blue"
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-          }
         />
 
         <StatCard
           title="Online"
           value={stats.online}
-          subtitle={`${((stats.online / stats.total) * 100).toFixed(0)}% del total`}
+          subtitle={`${((stats.online / stats.total) * 100).toFixed(0)}%`}
+          icon={CheckCircle2}
           color="emerald"
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
+        />
+
+        <StatCard
+          title="Offline"
+          value={stats.offline}
+          subtitle={stats.offline > 0 ? 'Requiere atención' : 'Todo bien'}
+          icon={XCircle}
+          color="red"
+        />
+
+        <StatCard
+          title="Degradado"
+          value={stats.degraded}
+          subtitle={stats.degraded > 0 ? 'Problemas menores' : 'OK'}
+          icon={AlertTriangle}
+          color="amber"
         />
 
         <StatCard
           title="Tiempo Medio"
           value={`${Math.round(stats.avgResponseTime)}ms`}
-          subtitle="Tiempo de respuesta"
+          subtitle="Respuesta"
+          icon={Zap}
           color="purple"
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          }
         />
 
         <StatCard
-          title="Uptime Global"
+          title="Uptime"
           value={`${stats.avgUptime.toFixed(1)}%`}
-          subtitle="Promedio de disponibilidad"
-          color="amber"
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
+          subtitle="Disponibilidad"
+          icon={TrendingUp}
+          color="emerald"
         />
       </div>
 
       {/* Distribution Bars - Compact */}
       {services.length > 0 && (
-        <Card className="py-4 px-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-              Distribución
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+              <Activity className="w-4 h-4 text-slate-400" />
+              Distribución de servicios
             </h3>
-            <span className="text-xs text-slate-500 dark:text-gray-400">{stats.total} servicios</span>
+            <span className="text-xs text-slate-500 dark:text-gray-400">{stats.total} total</span>
           </div>
           
-          <div className="space-y-2">
-            <StatusBar 
+          <div className="space-y-3">
+            <MiniStatusBar 
               label="Online" 
               count={stats.online} 
               total={stats.total} 
               color="emerald" 
             />
-            <StatusBar 
+            <MiniStatusBar 
               label="Offline" 
               count={stats.offline} 
               total={stats.total} 
               color="red" 
             />
-            <StatusBar 
+            <MiniStatusBar 
               label="Degradado" 
               count={stats.degraded} 
               total={stats.total} 
               color="amber" 
             />
+            <MiniStatusBar 
+              label="Desconocido" 
+              count={stats.unknown} 
+              total={stats.total} 
+              color="slate" 
+            />
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );

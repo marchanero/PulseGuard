@@ -1,37 +1,31 @@
-import { Button } from './ui';
+import { Plus, Server, ArrowRight } from 'lucide-react';
 
 function EmptyState({ onAddClick }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4">
-      <div className="relative mb-8">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full blur-3xl"></div>
-        <div className="relative w-32 h-32 bg-white dark:bg-gray-800 rounded-3xl border-2 border-dashed border-slate-300 dark:border-gray-600 flex items-center justify-center shadow-xl">
-          <svg className="w-16 h-16 text-slate-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-        </div>
+    <div className="flex flex-col items-center justify-center py-20 px-4">
+      {/* Icono */}
+      <div className="w-20 h-20 rounded-2xl bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center mb-6">
+        <Server className="w-10 h-10 text-slate-400 dark:text-slate-500" />
       </div>
       
-      <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3 text-center">
-        No hay servicios configurados
+      {/* Texto */}
+      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 text-center">
+        No hay servicios
       </h3>
       
-      <p className="text-slate-500 dark:text-gray-400 text-center max-w-md mb-8 leading-relaxed">
-        Comienza añadiendo tu primer servicio para monitorizar su estado en tiempo real. 
-        Recibirás notificaciones cuando haya cambios importantes.
+      <p className="text-sm text-slate-500 dark:text-gray-400 text-center max-w-sm mb-8">
+        Añade tu primer servicio para empezar a monitorizar su estado en tiempo real.
       </p>
       
-      <Button
+      {/* Botón */}
+      <button
         onClick={onAddClick}
-        size="lg"
-        leftIcon={
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-        }
+        className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-slate-900 dark:bg-white dark:text-slate-900 rounded-lg hover:bg-slate-800 dark:hover:bg-gray-100 transition-colors"
       >
-        Añadir primer servicio
-      </Button>
+        <Plus className="w-4 h-4" />
+        Añadir servicio
+        <ArrowRight className="w-4 h-4" />
+      </button>
     </div>
   );
 }

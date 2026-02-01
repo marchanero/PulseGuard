@@ -7,6 +7,7 @@ import ServiceDrawer from './components/ServiceDrawer';
 import OnboardingGuide from './components/OnboardingGuide';
 import DashboardStats from './components/DashboardStats';
 import Header from './components/Header';
+import Footer from './components/Footer';
 import EmptyState from './components/EmptyState';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import CommandPalette from './components/CommandPalette';
@@ -163,7 +164,7 @@ function App() {
   };
 
   return (
-    <div className={`min-h-screen bg-slate-50 dark:bg-gray-900 ${isCompact ? 'compact-mode' : ''}`}>
+    <div className={`min-h-screen bg-slate-50 dark:bg-gray-900 flex flex-col ${isCompact ? 'compact-mode' : ''}`}>
       <Header 
         onAddClick={() => setShowForm(!showForm)}
         onCheckAll={handleCheckAll}
@@ -173,7 +174,7 @@ function App() {
         onOpenCommandPalette={() => setShowCommandPalette(true)}
       />
 
-      <main className={`max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 ${isCompact ? 'py-4' : 'py-8'}`}>
+      <main className={`flex-1 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 ${isCompact ? 'py-4' : 'py-8'} w-full`}>
         {loading ? (
           <div className="space-y-8 animate-fade-in">
             <DashboardStatsSkeleton />
@@ -254,14 +255,10 @@ function App() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 dark:border-gray-800 mt-20">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-6">
-          <p className="text-center text-sm text-slate-500 dark:text-gray-400">
-            ServiceMonitor - Monitorización de servicios en tiempo real
-          </p>
-        </div>
-      </footer>
+      {/* Footer - Fixed at bottom */}
+      <div className="mt-auto">
+        <Footer />
+      </div>
 
       {/* Onboarding Guide */}
       <OnboardingGuide

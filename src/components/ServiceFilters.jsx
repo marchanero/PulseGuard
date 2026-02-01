@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Search, Filter, LayoutGrid, List, ArrowUpDown, X } from 'lucide-react';
 import ExportButton from './ExportButton';
 
 function ServiceFilters({ services, onFilterChange, viewMode, onViewModeChange, isOpen, isCompact }) {
@@ -20,19 +21,17 @@ function ServiceFilters({ services, onFilterChange, viewMode, onViewModeChange, 
   ];
 
   const sortOptions = [
-    { value: 'name', label: 'Nombre', icon: 'Aa' },
-    { value: 'status', label: 'Estado', icon: '●' },
-    { value: 'responseTime', label: 'Tiempo de respuesta', icon: '⚡' },
-    { value: 'uptime', label: 'Uptime', icon: '%' },
-    { value: 'lastChecked', label: 'Última verificación', icon: '🕐' }
+    { value: 'name', label: 'Nombre' },
+    { value: 'status', label: 'Estado' },
+    { value: 'responseTime', label: 'Tiempo resp.' },
+    { value: 'uptime', label: 'Uptime' },
+    { value: 'lastChecked', label: 'Último check' }
   ];
 
   const filteredServices = useMemo(() => {
-    // Ensure services is an array
     const servicesArray = Array.isArray(services) ? services : [];
     let result = [...servicesArray];
 
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(service =>
@@ -41,12 +40,10 @@ function ServiceFilters({ services, onFilterChange, viewMode, onViewModeChange, 
       );
     }
 
-    // Status filter
     if (statusFilter !== 'all') {
       result = result.filter(service => service.status === statusFilter);
     }
 
-    // Sort
     result.sort((a, b) => {
       switch (sortBy) {
         case 'name':
@@ -69,42 +66,32 @@ function ServiceFilters({ services, onFilterChange, viewMode, onViewModeChange, 
     return result;
   }, [services, searchQuery, statusFilter, sortBy]);
 
-  // Notify parent of filtered results
   useMemo(() => {
     onFilterChange(filteredServices);
   }, [filteredServices, onFilterChange]);
 
   const activeFiltersCount = (searchQuery ? 1 : 0) + (statusFilter !== 'all' ? 1 : 0);
-
-  // Remove the useEffect and use isOpen directly when provided
   const showFiltersPanel = isOpen !== undefined ? isOpen : showFilters;
 
   if (isCompact) {
-    // Compact mode - minimal filters
     return (
-      <div className={`mb-4 ${isCompact ? 'space-y-2' : 'space-y-3'}`}>
+      <div className="mb-4 space-y-2">
         <div className="flex items-center gap-2">
           <div className="flex-1 relative">
-            <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-              <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
               placeholder="Buscar..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-7 py-1.5 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-8 pr-7 py-1.5 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-white"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
                 className="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 hover:text-slate-600"
               >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
@@ -112,19 +99,15 @@ function ServiceFilters({ services, onFilterChange, viewMode, onViewModeChange, 
           <div className="flex items-center bg-slate-100 dark:bg-gray-700 rounded-lg p-0.5">
             <button
               onClick={() => onViewModeChange('grid')}
-              className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-white dark:bg-gray-600 text-blue-600 shadow-sm' : 'text-slate-500'}`}
+              className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-white dark:bg-gray-600 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500'}`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-              </svg>
+              <LayoutGrid className="w-4 h-4" />
             </button>
             <button
               onClick={() => onViewModeChange('list')}
-              className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-white dark:bg-gray-600 text-blue-600 shadow-sm' : 'text-slate-500'}`}
+              className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-white dark:bg-gray-600 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500'}`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+              <List className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -133,32 +116,26 @@ function ServiceFilters({ services, onFilterChange, viewMode, onViewModeChange, 
   }
 
   return (
-    <div className="mb-6 space-y-3">
-      {/* Barra principal compacta */}
+    <div className="mb-5 space-y-3">
+      {/* Barra principal */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 p-3">
         <div className="flex items-center gap-2">
           {/* Búsqueda */}
           <div className="flex-1 relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
               placeholder="Buscar servicios..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-white transition-colors"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
                 className="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-gray-300"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
@@ -168,16 +145,14 @@ function ServiceFilters({ services, onFilterChange, viewMode, onViewModeChange, 
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               showFilters || activeFiltersCount > 0
-                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
                 : 'bg-slate-100 text-slate-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'
             }`}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
+            <Filter className="w-4 h-4" />
             <span className="hidden sm:inline">Filtros</span>
             {activeFiltersCount > 0 && (
-              <span className="ml-0.5 px-1.5 py-0.5 bg-blue-600 text-white text-xs rounded-full min-w-[1.25rem] text-center">
+              <span className="ml-0.5 px-1.5 py-0.5 bg-white/20 dark:bg-slate-900/20 text-xs rounded-full min-w-[1.25rem] text-center">
                 {activeFiltersCount}
               </span>
             )}
@@ -189,61 +164,56 @@ function ServiceFilters({ services, onFilterChange, viewMode, onViewModeChange, 
               onClick={() => onViewModeChange('grid')}
               className={`p-2 rounded-md transition-colors ${
                 viewMode === 'grid'
-                  ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                  ? 'bg-white dark:bg-gray-600 text-slate-900 dark:text-white shadow-sm'
                   : 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200'
               }`}
               title="Vista de cuadrícula"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-              </svg>
+              <LayoutGrid className="w-4 h-4" />
             </button>
             <button
               onClick={() => onViewModeChange('list')}
               className={`p-2 rounded-md transition-colors ${
                 viewMode === 'list'
-                  ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                  ? 'bg-white dark:bg-gray-600 text-slate-900 dark:text-white shadow-sm'
                   : 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200'
               }`}
               title="Vista de lista"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+              <List className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Exportar - solo desktop */}
+          {/* Exportar */}
           <div className="hidden md:block">
             <ExportButton services={services} />
           </div>
         </div>
       </div>
 
-      {/* Panel de filtros expandible */}
+      {/* Panel de filtros */}
       {showFiltersPanel && (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 p-4 animate-fade-in">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Filtros de estado */}
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                Filtrar por estado
+              <label className="block text-xs font-medium text-slate-500 dark:text-gray-400 uppercase mb-2">
+                Estado
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {statusOptions.map(option => (
                   <button
                     key={option.value}
                     onClick={() => setStatusFilter(option.value)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       statusFilter === option.value
-                        ? 'bg-slate-800 text-white dark:bg-white dark:text-slate-900 shadow-md'
+                        ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
                         : 'bg-slate-100 text-slate-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'
                     }`}
                   >
-                    <span className={`w-2 h-2 rounded-full ${option.color}`} />
-                    <span className="hidden sm:inline">{option.label}</span>
-                    <span className="sm:hidden">{option.label.slice(0, 3)}</span>
-                    <span className={`text-xs ${
+                    <span className={`w-1.5 h-1.5 rounded-full ${option.color}`} />
+                    <span>{option.label}</span>
+                    <span className={`text-[10px] ${
                       statusFilter === option.value
                         ? 'text-slate-300 dark:text-slate-500'
                         : 'text-slate-400 dark:text-gray-500'
@@ -257,20 +227,21 @@ function ServiceFilters({ services, onFilterChange, viewMode, onViewModeChange, 
 
             {/* Ordenamiento */}
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-medium text-slate-500 dark:text-gray-400 uppercase mb-2">
                 Ordenar por
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {sortOptions.map(option => (
                   <button
                     key={option.value}
                     onClick={() => setSortBy(option.value)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       sortBy === option.value
-                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 ring-2 ring-blue-500/20'
+                        ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
                         : 'bg-slate-100 text-slate-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'
                     }`}
                   >
+                    <ArrowUpDown className="w-3 h-3" />
                     {option.label}
                   </button>
                 ))}
@@ -278,46 +249,14 @@ function ServiceFilters({ services, onFilterChange, viewMode, onViewModeChange, 
             </div>
           </div>
 
-          {/* Botón limpiar filtros */}
-          {activeFiltersCount > 0 && (
-            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-gray-700 flex justify-end">
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setStatusFilter('all');
-                  setSortBy('name');
-                }}
-                className="text-sm text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200 flex items-center gap-1"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                Limpiar filtros
-              </button>
-            </div>
-          )}
+          {/* Resultados */}
+          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-gray-700">
+            <p className="text-xs text-slate-500 dark:text-gray-400">
+              Mostrando <span className="font-medium text-slate-900 dark:text-white">{filteredServices.length}</span> de <span className="font-medium text-slate-900 dark:text-white">{safeServices.length}</span> servicios
+            </p>
+          </div>
         </div>
       )}
-
-      {/* Resultados count */}
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-slate-500 dark:text-gray-400">
-          {filteredServices.length === 0 ? (
-            'No se encontraron servicios'
-          ) : (
-            <>
-              Mostrando <span className="font-medium text-slate-700 dark:text-gray-200">{filteredServices.length}</span> de{' '}
-              <span className="font-medium text-slate-700 dark:text-gray-200">{services.length}</span> servicios
-            </>
-          )}
-        </span>
-        
-        {filteredServices.length > 0 && (
-          <span className="text-slate-400 dark:text-gray-500 text-xs">
-            {viewMode === 'grid' ? 'Vista de cuadrícula' : 'Vista de lista'}
-          </span>
-        )}
-      </div>
     </div>
   );
 }
