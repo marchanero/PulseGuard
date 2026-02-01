@@ -12,6 +12,7 @@ primary_region = 'ams'
 [env]
   NODE_ENV = 'production'
   PORT = '3001'
+  DATABASE_URL = 'file:/app/prisma/prisma/dev.db'
 
 [[mounts]]
   source = 'pulseguard_data'
