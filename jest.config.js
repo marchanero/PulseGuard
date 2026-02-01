@@ -19,7 +19,8 @@ export default {
   testPathIgnorePatterns: [
     '/node_modules/',
     '/dist/',
-    '/cypress/'
+    '/cypress/',
+    '/server/__tests__/setup.js'
   ],
 
   // Transformación de archivos con Babel
@@ -43,6 +44,9 @@ export default {
 
   // Archivo de setup para configurar Testing Library
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+
+  // Setup files para inicializar TextEncoder/TextDecoder antes de los tests de API
+  setupFiles: ['<rootDir>/server/__tests__/setup.js'],
 
   // Cobertura de código
   collectCoverageFrom: [

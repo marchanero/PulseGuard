@@ -14,10 +14,14 @@ if (typeof globalThis.TextDecoder === 'undefined') {
 }
 
 // También asignar a global para compatibilidad con módulos que no usan globalThis
+// eslint-disable-next-line no-undef
 if (typeof global.TextEncoder === 'undefined') {
+  // eslint-disable-next-line no-undef
   global.TextEncoder = TextEncoder;
 }
 
+// eslint-disable-next-line no-undef
 if (typeof global.TextDecoder === 'undefined') {
+  // eslint-disable-next-line no-undef
   global.TextDecoder = TextDecoder;
 }
