@@ -79,38 +79,46 @@ function ServiceForm({ onSubmit }) {
     if (validate()) {
       setIsSubmitting(true);
       
-      // Preparar datos según el tipo
-      const submitData = {
-        name: formData.name,
-        type: formData.type,
-        checkInterval: formData.checkInterval,
-        isActive: formData.isActive,
-        description: formData.description
-      };
-      
-      if (formData.type === 'HTTP' || formData.type === 'HTTPS') {
-        submitData.url = formData.url;
-      } else {
-        submitData.url = formData.host;
-        submitData.host = formData.host;
-        if (formData.type === 'TCP') {
-          submitData.port = parseInt(formData.port);
+      try {
+        // Preparar datos según el tipo
+        const submitData = {
+          name: formData.name,
+          type: formData.type,
+          checkInterval: formData.checkInterval,
+          isActive: formData.isActive,
+          description: formData.description
+        };
+        
+        if (formData.type === 'HTTP' || formData.type === 'HTTPS') {
+          submitData.url = formData.url;
+        } else {
+          submitData.url = formData.host;
+          submitData.host = formData.host;
+          if (formData.type === 'TCP') {
+            submitData.port = parseInt(formData.port);
+          }
         }
+        
+        console.log('Enviando datos del formulario:', submitData);
+        await onSubmit(submitData);
+        
+        // Resetear formulario solo si tuvo éxito
+        setFormData({ 
+          name: '', 
+          type: 'HTTP',
+          url: '', 
+          host: '',
+          port: '',
+          description: '', 
+          checkInterval: 60, 
+          isActive: true 
+        });
+        setErrors({});
+      } catch (error) {
+        console.error('Error en el envío:', error);
+      } finally {
+        setIsSubmitting(false);
       }
-      
-      await onSubmit(submitData);
-      setIsSubmitting(false);
-      setFormData({ 
-        name: '', 
-        type: 'HTTP',
-        url: '', 
-        host: '',
-        port: '',
-        description: '', 
-        checkInterval: 60, 
-        isActive: true 
-      });
-      setErrors({});
     }
   };
 

@@ -83,16 +83,23 @@ function App() {
 
   const handleAddService = async (serviceData) => {
     try {
+      console.log('Enviando datos:', serviceData);
       const response = await fetch(`${API_URL}/services`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(serviceData)
       });
       
+      const data = await response.json();
+      console.log('Respuesta:', data);
+      
       if (response.ok) {
         fetchServices();
         setShowForm(false);
         toast.success(`Servicio "${serviceData.name}" añadido correctamente`);
+      } else {
+        console.error('Error del servidor:', data);
+        toast.error(data.error || 'Error al añadir el servicio');
       }
     } catch (error) {
       console.error('Error adding service:', error);

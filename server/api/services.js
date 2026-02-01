@@ -71,8 +71,10 @@ router.post('/', async (req, res) => {
   try {
     const { name, type, url, host, port, description, checkInterval, isActive } = req.body;
     
-    if (!name || !url) {
-      return res.status(400).json({ error: 'Nombre y URL son requeridos' });
+    console.log('Creando servicio:', { name, type, url, host, port });
+    
+    if (!name) {
+      return res.status(400).json({ error: 'El nombre es requerido' });
     }
     
     // Validar checkInterval (mínimo 10 segundos, máximo 1 hora)
@@ -85,11 +87,21 @@ router.post('/', async (req, res) => {
     const validTypes = ['HTTP', 'HTTPS', 'PING', 'DNS', 'TCP', 'SSL'];
     const serviceType = type && validTypes.includes(type) ? type : 'HTTP';
     
+    // Determinar URL según el tipo
+    let serviceUrl = url;
+    if (!serviceUrl && host) {
+      serviceUrl = host;
+    }
+    
+    if (!serviceUrl) {
+      return res.status(400).json({ error: 'URL o host es requerido' });
+    }
+    
     const newService = await prisma.service.create({
       data: {
         name,
         type: serviceType,
-        url,
+        url: serviceUrl,
         host: host || null,
         port: port ? parseInt(port) : null,
         description: description || '',
@@ -100,6 +112,8 @@ router.post('/', async (req, res) => {
       }
     });
     
+    console.log('Servicio creado:', newService);
+    
     // Iniciar monitoreo automático si está activo
     if (newService.isActive) {
       startMonitoring(newService);
@@ -107,6 +121,7 @@ router.post('/', async (req, res) => {
     
     res.status(201).json(newService);
   } catch (error) {
+    console.error('Error creando servicio:', error);
     res.status(500).json({ error: 'Error al crear servicio', message: error.message });
   }
 });
