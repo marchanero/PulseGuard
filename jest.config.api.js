@@ -18,6 +18,9 @@ export default {
     '^.+\.(js|jsx)$': 'babel-jest'
   },
 
+  // Setup files para inicializar TextEncoder/TextDecoder
+  setupFiles: ['<rootDir>/server/__tests__/setup.js'],
+
   // Setup files
   setupFilesAfterEnv: ['<rootDir>/jest.setup.api.js'],
 
