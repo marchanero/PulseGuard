@@ -27,6 +27,14 @@ model Service {
   onlineTime         Int      @default(0) // Tiempo online acumulado en ms
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+  
+  // Campos para monitoreo avanzado
+  contentMatch       String?  // Texto a buscar en la respuesta
+  sslExpiryDate      DateTime? // Fecha de expiración del certificado SSL
+  sslDaysRemaining   Int?     // Días restantes hasta expiración
+  dbType             String?  // Tipo de base de datos (mysql, postgresql, mongodb)
+  dbConnectionString String?  // String de conexión a la base de datos
+  
   logs               ServiceLog[]
   metrics            PerformanceMetric[]
 }

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card, Button } from './ui';
 import { Activity, TrendingUp, Clock, AlertCircle } from 'lucide-react';
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 function PerformanceChart({ serviceId, isCompact = false }) {
   const [metrics, setMetrics] = useState([]);

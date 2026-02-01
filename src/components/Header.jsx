@@ -1,7 +1,9 @@
-import { Plus, RefreshCw, Search, Command, Minimize2, Maximize2, Activity } from 'lucide-react';
+import { Plus, RefreshCw, Search, Command, Minimize2, Maximize2, Activity, LogOut, ExternalLink } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
+import { useAuth } from '../hooks/useAuth.js';
 
 function Header({ onAddClick, onCheckAll, servicesCount, isCompact, onToggleCompact, onOpenCommandPalette }) {
+  const { logout } = useAuth();
   return (
     <header className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-800">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -64,6 +66,24 @@ function Header({ onAddClick, onCheckAll, servicesCount, isCompact, onToggleComp
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Añadir</span>
+            </button>
+
+            {/* Link to Status Page */}
+            <a
+              href="/status"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span>Status</span>
+            </a>
+
+            {/* Logout */}
+            <button
+              onClick={logout}
+              className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              title="Cerrar sesión"
+            >
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>

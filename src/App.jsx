@@ -8,6 +8,9 @@ import OnboardingGuide from './components/OnboardingGuide';
 import DashboardStats from './components/DashboardStats';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import { Login } from './components/Login.jsx';
+import { StatusPage } from './components/StatusPage.jsx';
+import { useAuth } from './hooks/useAuth.js';
 import EmptyState from './components/EmptyState';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import CommandPalette from './components/CommandPalette';
@@ -18,7 +21,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useCompactMode } from './hooks/useCompactMode';
 import { useTheme } from './context/theme';
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 function App() {
   const [services, setServices] = useState([]);
@@ -38,6 +41,10 @@ function App() {
   const { confirm } = useConfirm();
   const { isCompact, toggleCompact } = useCompactMode();
   const { theme, toggleTheme } = useTheme();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+
+  // Detectar si estamos en la página de status
+  const isStatusPage = window.location.pathname === '/status';
 
   useEffect(() => {
     fetchServices();
@@ -70,7 +77,9 @@ function App() {
   const fetchServices = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/services`);
+      const response = await fetch(`${API_URL}/services`, {
+        credentials: 'include'
+      });
       const data = await response.json();
       setServices(data);
     } catch (error) {
@@ -87,6 +96,7 @@ function App() {
       const response = await fetch(`${API_URL}/services`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(serviceData)
       });
       
@@ -120,7 +130,8 @@ function App() {
 
     try {
       const response = await fetch(`${API_URL}/services/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       });
       
       if (response.ok) {
@@ -136,7 +147,8 @@ function App() {
   const handleCheckService = async (id) => {
     try {
       const response = await fetch(`${API_URL}/services/${id}/check`, {
-        method: 'POST'
+        method: 'POST',
+        credentials: 'include'
       });
       
       if (response.ok) {
@@ -152,7 +164,8 @@ function App() {
   const handleCheckAll = async () => {
     try {
       const response = await fetch(`${API_URL}/services/check-all`, {
-        method: 'POST'
+        method: 'POST',
+        credentials: 'include'
       });
       
       if (response.ok) {
@@ -170,9 +183,31 @@ function App() {
     setIsDrawerOpen(true);
   };
 
+  // Mostrar página de status pública
+  if (isStatusPage) {
+    return <StatusPage />;
+  }
+
+  // Mostrar loading mientras se verifica autenticación
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-slate-600 dark:text-gray-400">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar login si no está autenticado
+  if (!isAuthenticated) {
+    return <Login />;
+  }
+
   return (
     <div className={`min-h-screen bg-slate-50 dark:bg-gray-900 flex flex-col ${isCompact ? 'compact-mode' : ''}`}>
-      <Header 
+      <Header
         onAddClick={() => setShowForm(!showForm)}
         onCheckAll={handleCheckAll}
         servicesCount={services.length}
