@@ -8,21 +8,23 @@ datasource db {
 }
 
 model Service {
-  id            Int      @id @default(autoincrement())
-  name          String
-  url           String
-  description   String?
-  status        String   @default("unknown")
-  responseTime  Int?
-  uptime        Float    @default(100)
-  lastChecked   DateTime?
-  checkInterval Int      @default(60) // Intervalo en segundos (por defecto 60s = 1 minuto)
-  isActive      Boolean  @default(true) // Si está activo el monitoreo automático
-  isDeleted     Boolean  @default(false) // Soft delete - servicio archivado
-  deletedAt     DateTime? // Fecha de eliminación
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  logs          ServiceLog[]
+  id                 Int      @id @default(autoincrement())
+  name               String
+  url                String
+  description        String?
+  status             String   @default("unknown")
+  responseTime       Int?
+  uptime             Float    @default(100)
+  lastChecked        DateTime?
+  checkInterval      Int      @default(60) // Intervalo en segundos (por defecto 60s = 1 minuto)
+  isActive           Boolean  @default(true) // Si está activo el monitoreo automático
+  isDeleted          Boolean  @default(false) // Soft delete - servicio archivado
+  deletedAt          DateTime? // Fecha de eliminación
+  totalMonitoredTime Int      @default(0) // Tiempo total monitoreado en ms
+  onlineTime         Int      @default(0) // Tiempo online acumulado en ms
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  logs               ServiceLog[]
 }
 
 model ServiceLog {

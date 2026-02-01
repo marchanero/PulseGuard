@@ -85,7 +85,11 @@ function DashboardStats({ services, isCompact }) {
       .filter(s => s.responseTime)
       .reduce((acc, s) => acc + s.responseTime, 0) / services.filter(s => s.responseTime).length || 0;
     
-    const avgUptime = services.reduce((acc, s) => acc + (s.uptime || 100), 0) / total || 100;
+    // Calcular uptime global basado en servicios que tienen datos de monitoreo
+    const servicesWithUptime = services.filter(s => s.totalMonitoredTime > 0);
+    const avgUptime = servicesWithUptime.length > 0 
+      ? servicesWithUptime.reduce((acc, s) => acc + (s.uptime || 0), 0) / servicesWithUptime.length 
+      : (online / total) * 100; // Fallback: porcentaje de servicios online
 
     return {
       total,

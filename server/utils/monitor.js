@@ -19,15 +19,51 @@ async function monitorService(serviceId) {
 
     const result = await checkServiceHealth(service.url);
 
-    // Actualizar el servicio con los nuevos datos
-    await prisma.service.update({
-      where: { id: serviceId },
-      data: {
-        status: result.status,
-        responseTime: result.responseTime,
-        lastChecked: new Date()
-      }
-    });
+    // Calcular uptime basado en el estado actual
+    let newUptime = service.uptime || 100;
+    const now = new Date();
+    const lastChecked = service.lastChecked;
+    
+    // Solo recalcular uptime si hay un check previo
+    if (lastChecked) {
+      const timeSinceLastCheck = now - new Date(lastChecked);
+      
+      // Actualizar tiempo total monitoreado
+      const totalMonitoredTime = (service.totalMonitoredTime || 0) + timeSinceLastCheck;
+      
+      // Calcular uptime: tiempo online/degradado / tiempo total monitoreado
+      // Consideramos "online" tanto el estado 'online' como 'degraded' (funciona pero con problemas)
+      const wasOnlineOrDegraded = result.status === 'online' || result.status === 'degraded';
+      const onlineTime = (service.onlineTime || 0) + (wasOnlineOrDegraded ? timeSinceLastCheck : 0);
+      
+      newUptime = totalMonitoredTime > 0 ? (onlineTime / totalMonitoredTime) * 100 : 100;
+      
+      // Actualizar el servicio con los nuevos datos y métricas de uptime
+      await prisma.service.update({
+        where: { id: serviceId },
+        data: {
+          status: result.status,
+          responseTime: result.responseTime,
+          lastChecked: now,
+          uptime: newUptime,
+          totalMonitoredTime: totalMonitoredTime,
+          onlineTime: onlineTime
+        }
+      });
+    } else {
+      // Primera verificación - inicializar uptime
+      await prisma.service.update({
+        where: { id: serviceId },
+        data: {
+          status: result.status,
+          responseTime: result.responseTime,
+          lastChecked: now,
+          uptime: result.status === 'online' ? 100 : 0,
+          totalMonitoredTime: 0,
+          onlineTime: result.status === 'online' ? 0 : 0
+        }
+      });
+    }
 
     // Crear log
     await prisma.serviceLog.create({

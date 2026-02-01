@@ -248,13 +248,35 @@ router.post('/:id/check', async (req, res) => {
     }
     
     const result = await checkServiceHealth(service.url);
+    const now = new Date();
+    
+    // Calcular uptime basado en el estado actual
+    let newUptime = service.uptime || 100;
+    let totalMonitoredTime = service.totalMonitoredTime || 0;
+    let onlineTime = service.onlineTime || 0;
+    
+    const lastChecked = service.lastChecked;
+    if (lastChecked) {
+      const timeSinceLastCheck = now - new Date(lastChecked);
+      totalMonitoredTime = totalMonitoredTime + timeSinceLastCheck;
+      // Consideramos "online" tanto el estado 'online' como 'degraded' (funciona pero con problemas)
+      const wasOnlineOrDegraded = result.status === 'online' || result.status === 'degraded';
+      onlineTime = onlineTime + (wasOnlineOrDegraded ? timeSinceLastCheck : 0);
+      newUptime = totalMonitoredTime > 0 ? (onlineTime / totalMonitoredTime) * 100 : 100;
+    } else {
+      // Primera verificación - consideramos online tanto 'online' como 'degraded'
+      newUptime = (result.status === 'online' || result.status === 'degraded') ? 100 : 0;
+    }
     
     const updatedService = await prisma.service.update({
       where: { id: service.id },
       data: {
         status: result.status,
         responseTime: result.responseTime,
-        lastChecked: new Date()
+        lastChecked: now,
+        uptime: newUptime,
+        totalMonitoredTime: totalMonitoredTime,
+        onlineTime: onlineTime
       },
       include: {
         logs: {
@@ -288,13 +310,35 @@ router.post('/check-all', async (req, res) => {
     await Promise.all(
       services.map(async (service) => {
         const result = await checkServiceHealth(service.url);
+        const now = new Date();
+        
+        // Calcular uptime basado en el estado actual
+        let newUptime = service.uptime || 100;
+        let totalMonitoredTime = service.totalMonitoredTime || 0;
+        let onlineTime = service.onlineTime || 0;
+        
+        const lastChecked = service.lastChecked;
+        if (lastChecked) {
+      const timeSinceLastCheck = now - new Date(lastChecked);
+      totalMonitoredTime = totalMonitoredTime + timeSinceLastCheck;
+      // Consideramos "online" tanto el estado 'online' como 'degraded' (funciona pero con problemas)
+      const wasOnlineOrDegraded = result.status === 'online' || result.status === 'degraded';
+      onlineTime = onlineTime + (wasOnlineOrDegraded ? timeSinceLastCheck : 0);
+      newUptime = totalMonitoredTime > 0 ? (onlineTime / totalMonitoredTime) * 100 : 100;
+    } else {
+      // Primera verificación - consideramos online tanto 'online' como 'degraded'
+      newUptime = (result.status === 'online' || result.status === 'degraded') ? 100 : 0;
+    }
         
         await prisma.service.update({
           where: { id: service.id },
           data: {
             status: result.status,
             responseTime: result.responseTime,
-            lastChecked: new Date()
+            lastChecked: now,
+            uptime: newUptime,
+            totalMonitoredTime: totalMonitoredTime,
+            onlineTime: onlineTime
           }
         });
         

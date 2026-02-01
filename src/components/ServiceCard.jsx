@@ -217,10 +217,7 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, isCompact }) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Glow effect for online status */}
-      {service.status === 'online' && service.isActive && (
-        <div className={`absolute -inset-0.5 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10`}></div>
-      )}
+
 
       {/* Header Section */}
       <div className="p-6 pb-4">
