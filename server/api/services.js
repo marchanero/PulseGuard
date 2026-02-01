@@ -1,6 +1,6 @@
 import express from 'express';
 import prisma from '../lib/prisma.js';
-import { checkServiceHealth } from '../utils/healthCheck.js';
+import { checkService } from '../utils/checkTypes.js';
 import { startMonitoring, stopMonitoring } from '../utils/monitor.js';
 
 const router = express.Router();
@@ -69,7 +69,7 @@ router.get('/:id', async (req, res) => {
 // Crear un nuevo servicio
 router.post('/', async (req, res) => {
   try {
-    const { name, url, description, checkInterval, isActive } = req.body;
+    const { name, type, url, host, port, description, checkInterval, isActive } = req.body;
     
     if (!name || !url) {
       return res.status(400).json({ error: 'Nombre y URL son requeridos' });
@@ -81,10 +81,17 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'El intervalo debe estar entre 10 segundos y 1 hora (3600s)' });
     }
     
+    // Validar tipo de servicio
+    const validTypes = ['HTTP', 'HTTPS', 'PING', 'DNS', 'TCP', 'SSL'];
+    const serviceType = type && validTypes.includes(type) ? type : 'HTTP';
+    
     const newService = await prisma.service.create({
       data: {
         name,
+        type: serviceType,
         url,
+        host: host || null,
+        port: port ? parseInt(port) : null,
         description: description || '',
         checkInterval: interval,
         isActive: isActive !== undefined ? isActive : true,
@@ -107,7 +114,7 @@ router.post('/', async (req, res) => {
 // Actualizar un servicio
 router.put('/:id', async (req, res) => {
   try {
-    const { name, url, description, checkInterval, isActive } = req.body;
+    const { name, type, url, host, port, description, checkInterval, isActive } = req.body;
     
     // Obtener el servicio actual
     const currentService = await prisma.service.findUnique({
@@ -127,11 +134,17 @@ router.put('/:id', async (req, res) => {
       }
     }
     
+    // Validar tipo de servicio
+    const validTypes = ['HTTP', 'HTTPS', 'PING', 'DNS', 'TCP', 'SSL'];
+    
     const updatedService = await prisma.service.update({
       where: { id: parseInt(req.params.id) },
       data: {
         ...(name && { name }),
+        ...(type && validTypes.includes(type) && { type }),
         ...(url && { url }),
+        ...(host !== undefined && { host }),
+        ...(port !== undefined && { port: port ? parseInt(port) : null }),
         ...(description !== undefined && { description }),
         ...(interval && { checkInterval: interval }),
         ...(isActive !== undefined && { isActive })
@@ -145,8 +158,8 @@ router.put('/:id', async (req, res) => {
       } else {
         stopMonitoring(updatedService.id);
       }
-    } else if (updatedService.isActive && (checkInterval || url)) {
-      // Si cambió el intervalo o URL, reiniciar monitoreo
+    } else if (updatedService.isActive && (checkInterval || url || type)) {
+      // Si cambió el intervalo, URL o tipo, reiniciar monitoreo
       startMonitoring(updatedService);
     }
     
@@ -247,7 +260,7 @@ router.post('/:id/check', async (req, res) => {
       return res.status(404).json({ error: 'Servicio no encontrado' });
     }
     
-    const result = await checkServiceHealth(service.url);
+    const result = await checkService(service);
     const now = new Date();
     
     // Calcular uptime basado en el estado actual
@@ -309,7 +322,7 @@ router.post('/check-all', async (req, res) => {
     
     await Promise.all(
       services.map(async (service) => {
-        const result = await checkServiceHealth(service.url);
+        const result = await checkService(service);
         const now = new Date();
         
         // Calcular uptime basado en el estado actual

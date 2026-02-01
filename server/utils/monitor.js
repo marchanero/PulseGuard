@@ -1,5 +1,5 @@
 import prisma from '../lib/prisma.js';
-import { checkServiceHealth } from './healthCheck.js';
+import { checkService } from './checkTypes.js';
 
 // Mapa para almacenar los intervalos activos
 const activeIntervals = new Map();
@@ -17,7 +17,7 @@ async function monitorService(serviceId) {
       return;
     }
 
-    const result = await checkServiceHealth(service.url);
+    const result = await checkService(service);
 
     // Calcular uptime basado en el estado actual
     let newUptime = service.uptime || 100;

@@ -10,7 +10,10 @@ datasource db {
 model Service {
   id                 Int      @id @default(autoincrement())
   name               String
+  type               String   @default("HTTP")
   url                String
+  host               String?  // Para PING, DNS, TCP, SSL
+  port               Int?     // Para TCP
   description        String?
   status             String   @default("unknown")
   responseTime       Int?
