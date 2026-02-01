@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import servicesRouter from './api/services.js';
 import authRouter, { sessionMiddleware, requireAuth } from './api/auth.js';
 import statusRouter from './api/status.js';
@@ -8,6 +10,9 @@ import analyticsRouter from './api/analytics.js';
 import { startAllMonitoring, stopAllMonitoring } from './utils/monitor.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -33,6 +38,15 @@ app.use('/api/analytics', requireAuth, analyticsRouter);
 // Ruta de health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Servir archivos estáticos del build de Vite en producción
+const distPath = path.join(__dirname, '../dist');
+app.use(express.static(distPath));
+
+// Ruta catch-all para SPA (debe ir después de las rutas de API)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 const server = app.listen(PORT, async () => {

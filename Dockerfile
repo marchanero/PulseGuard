@@ -18,6 +18,9 @@ COPY . .
 # Generar Prisma Client
 RUN npx prisma generate
 
+# Construir el frontend
+RUN npm run build
+
 # Exponer el puerto
 EXPOSE 3001
 
