@@ -85,10 +85,19 @@ export async function checkPing(host) {
     const responseTime = Date.now() - startTime;
     
     // Parse ping output to extract time
-    const timeMatch = stdout.match(/time[<=](\d+\.?\d*)\s*ms/);
+    const timeMatch = stdout.match(/time[<=](\d+\.?\d*)\s*ms/i);
     const pingTime = timeMatch ? parseFloat(timeMatch[1]) : responseTime;
     
-    if (stdout.includes('TTL') || stdout.includes('ttl')) {
+    // Check for successful ping indicators
+    const hasSuccessIndicator = stdout.includes('TTL') || 
+                                stdout.includes('ttl') || 
+                                stdout.includes('bytes from') ||
+                                stdout.includes('Reply from') ||
+                                stdout.includes('time=') ||
+                                stdout.includes('time<') ||
+                                stdout.includes('time>');
+    
+    if (hasSuccessIndicator) {
       return {
         status: 'online',
         responseTime: Math.round(pingTime),
@@ -103,11 +112,12 @@ export async function checkPing(host) {
       message: 'Ping failed - Host unreachable',
       statusCode: null
     };
-  } catch {
+  } catch (error) {
+    console.error(`[Ping Error] ${host}:`, error.message);
     return {
       status: 'offline',
-      responseTime: 5000,
-      message: 'Ping failed - Host unreachable',
+      responseTime: Date.now() - startTime,
+      message: `Ping failed: ${error.message}`,
       statusCode: null
     };
   }
@@ -118,14 +128,29 @@ export async function checkDNS(hostname) {
   const startTime = Date.now();
   
   try {
-    const addresses = await dns.promises.resolve(hostname);
+    // Try multiple DNS record types
+    let addresses = [];
+    
+    try {
+      // Try A records first
+      addresses = await dns.promises.resolve4(hostname);
+    } catch {
+      // If A fails, try AAAA (IPv6)
+      try {
+        addresses = await dns.promises.resolve6(hostname);
+      } catch {
+        // If both fail, try general resolve
+        addresses = await dns.promises.resolve(hostname);
+      }
+    }
+    
     const responseTime = Date.now() - startTime;
     
     if (addresses && addresses.length > 0) {
       return {
         status: 'online',
         responseTime,
-        message: `DNS resolved - ${addresses.join(', ')}`,
+        message: `DNS resolved - ${addresses.slice(0, 3).join(', ')}${addresses.length > 3 ? '...' : ''}`,
         statusCode: null,
         data: { addresses }
       };
@@ -139,6 +164,7 @@ export async function checkDNS(hostname) {
     };
   } catch (error) {
     const responseTime = Date.now() - startTime;
+    console.error(`[DNS Error] ${hostname}:`, error.message);
     
     return {
       status: 'offline',
