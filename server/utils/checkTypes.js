@@ -72,31 +72,38 @@ export async function checkHttp(url) {
 // Check Ping (ICMP)
 export async function checkPing(host) {
   const startTime = Date.now();
-  
+
   try {
     // Use system ping command
     const platform = process.platform;
-    const pingCmd = platform === 'win32' 
+    const pingCmd = platform === 'win32'
       ? `ping -n 1 -w 5000 ${host}`
       : `ping -c 1 -W 5 ${host}`;
-    
+
+    console.log(`[Ping] Executing: ${pingCmd}`);
+
     // eslint-disable-next-line no-unused-vars
     const { stdout, _stderr } = await execAsync(pingCmd);
     const responseTime = Date.now() - startTime;
-    
-    // Parse ping output to extract time
-    const timeMatch = stdout.match(/time[<=](\d+\.?\d*)\s*ms/i);
+
+    console.log(`[Ping] stdout for ${host}:`, stdout);
+
+    // Parse ping output to extract time (handle both time= and time< formats)
+    const timeMatch = stdout.match(/time[=<>]([\d.]+)\s*ms/i);
     const pingTime = timeMatch ? parseFloat(timeMatch[1]) : responseTime;
-    
+
     // Check for successful ping indicators
-    const hasSuccessIndicator = stdout.includes('TTL') || 
-                                stdout.includes('ttl') || 
+    const hasSuccessIndicator = stdout.includes('TTL') ||
+                                stdout.includes('ttl') ||
                                 stdout.includes('bytes from') ||
                                 stdout.includes('Reply from') ||
-                                stdout.includes('time=') ||
-                                stdout.includes('time<') ||
-                                stdout.includes('time>');
-    
+                                stdout.includes('icmp_seq') ||
+                                stdout.includes('1 packets received') ||
+                                stdout.includes('1 received') ||
+                                stdout.includes('0% packet loss');
+
+    console.log(`[Ping] ${host} - Success indicators found:`, hasSuccessIndicator);
+
     if (hasSuccessIndicator) {
       return {
         status: 'online',
@@ -105,7 +112,7 @@ export async function checkPing(host) {
         statusCode: null
       };
     }
-    
+
     return {
       status: 'offline',
       responseTime: pingTime,
