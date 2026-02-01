@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import ServiceCharts from './ServiceCharts';
+import PerformanceChart from './PerformanceChart';
 
 function ServiceDrawer({ service, isOpen, onClose }) {
   // Close on escape key
@@ -151,9 +152,12 @@ function ServiceDrawer({ service, isOpen, onClose }) {
               </div>
             </div>
 
+            {/* Performance Chart */}
+            <PerformanceChart serviceId={service.id} />
+
             {/* Charts */}
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Gráficos</h3>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Distribución de Estado</h3>
               <ServiceCharts service={service} />
             </div>
 

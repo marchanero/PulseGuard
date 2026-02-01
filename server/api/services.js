@@ -401,4 +401,81 @@ router.post('/:id/toggle', async (req, res) => {
   }
 });
 
+// Obtener métricas de rendimiento históricas de un servicio
+router.get('/:id/metrics', async (req, res) => {
+  try {
+    const serviceId = parseInt(req.params.id);
+    const { range = '24h' } = req.query;
+    
+    // Calcular fecha de inicio según el rango
+    const now = new Date();
+    let startDate;
+    
+    switch (range) {
+      case '1h':
+        startDate = new Date(now - 60 * 60 * 1000);
+        break;
+      case '24h':
+        startDate = new Date(now - 24 * 60 * 60 * 1000);
+        break;
+      case '7d':
+        startDate = new Date(now - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        startDate = new Date(now - 30 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now - 24 * 60 * 60 * 1000);
+    }
+    
+    const metrics = await prisma.performanceMetric.findMany({
+      where: {
+        serviceId: serviceId,
+        timestamp: {
+          gte: startDate
+        }
+      },
+      orderBy: {
+        timestamp: 'asc'
+      }
+    });
+    
+    // Calcular estadísticas agregadas
+    const stats = {
+      total: metrics.length,
+      avgResponseTime: 0,
+      minResponseTime: 0,
+      maxResponseTime: 0,
+      uptime: 100,
+      onlineCount: 0,
+      offlineCount: 0,
+      slowCount: 0
+    };
+    
+    if (metrics.length > 0) {
+      const responseTimes = metrics.map(m => m.responseTime).filter(rt => rt > 0);
+      stats.avgResponseTime = Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length);
+      stats.minResponseTime = Math.min(...responseTimes);
+      stats.maxResponseTime = Math.max(...responseTimes);
+      
+      metrics.forEach(m => {
+        if (m.status === 'online') stats.onlineCount++;
+        else if (m.status === 'offline') stats.offlineCount++;
+        else if (m.status === 'slow') stats.slowCount++;
+      });
+      
+      const totalChecks = stats.onlineCount + stats.offlineCount + stats.slowCount;
+      stats.uptime = totalChecks > 0 ? ((stats.onlineCount + stats.slowCount) / totalChecks * 100).toFixed(2) : 100;
+    }
+    
+    res.json({
+      metrics,
+      stats,
+      range
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener métricas', message: error.message });
+  }
+});
+
 export default router;

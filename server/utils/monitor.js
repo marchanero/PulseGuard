@@ -75,6 +75,16 @@ async function monitorService(serviceId) {
       }
     });
 
+    // Guardar métrica de rendimiento para análisis histórico
+    await prisma.performanceMetric.create({
+      data: {
+        serviceId: serviceId,
+        responseTime: result.responseTime,
+        status: result.status,
+        uptime: newUptime
+      }
+    });
+
     console.log(`[Monitor] Servicio ${service.name} verificado: ${result.status} (${result.responseTime}ms)`);
   } catch (error) {
     console.error(`[Monitor] Error verificando servicio ${serviceId}:`, error.message);
