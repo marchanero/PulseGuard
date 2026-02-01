@@ -19,6 +19,9 @@ PulseGuard es una aplicación full-stack moderna para monitorizar el estado de t
 - **Intervalos configurables** - Desde 10 segundos hasta 1 hora
 - **Histórico de logs** - Registro completo de todas las verificaciones
 - **Múltiples estados** - Online, Offline, Degradado, Timeout, Desconocido
+- **Múltiples tipos de servicios** - HTTP, TCP, Ping, DNS y más
+- **Uptime tracking** - Cálculo automático de porcentaje de disponibilidad
+- **Métricas de rendimiento** - Latencia, tiempo de respuesta, código de estado
 
 ### 🎨 UI/UX
 - **Dark/Light mode** - Cambio instantáneo con persistencia
@@ -27,6 +30,8 @@ PulseGuard es una aplicación full-stack moderna para monitorizar el estado de t
 - **Command Palette** - Búsqueda global con `Ctrl+K`
 - **Atajos de teclado** - Navegación rápida sin ratón
 - **Animaciones fluidas** - Transiciones suaves en toda la app
+- **Heatmap de uptime** - Visualización gráfica de disponibilidad
+- **Gráficas de rendimiento** - Tendencias de latencia y tiempos de respuesta
 
 ### 🛠️ Funcionalidades
 - **Filtros avanzados** - Por estado, nombre, tiempo de respuesta
@@ -34,6 +39,8 @@ PulseGuard es una aplicación full-stack moderna para monitorizar el estado de t
 - **Exportación de datos** - JSON y CSV
 - **Soft delete** - Elimina servicios preservando el historial
 - **Onboarding interactivo** - Tutorial para nuevos usuarios
+- **Gestión de incidentes** - Crear y rastrear incidentes por servicio
+- **Página de estado pública** - Comparte el estado con tus usuarios
 
 ## 🚀 Instalación
 
@@ -139,18 +146,33 @@ Puedes configurar el intervalo de verificación para cada servicio:
 | POST | `/api/services/check-all` | Verificar todos los servicios |
 | POST | `/api/services/:id/restore` | Restaurar servicio eliminado |
 | DELETE | `/api/services/:id/permanent` | Eliminar permanentemente |
+| GET | `/api/services/:id/metrics` | Métricas de rendimiento del servicio |
+| GET | `/api/services/:id/uptime` | Estadísticas de uptime |
+| GET | `/api/analytics/overview` | Dashboard analytics |
+| GET | `/api/status/public` | Estado público de todos los servicios |
+| GET | `/api/incidents` | Listar incidentes |
+| POST | `/api/incidents` | Crear nuevo incidente |
+| GET | `/api/incidents/:id` | Obtener incidente por ID |
+| PUT | `/api/incidents/:id` | Actualizar incidente |
+| DELETE | `/api/incidents/:id` | Eliminar incidente |
+| POST | `/api/auth/login` | Iniciar sesión |
+| POST | `/api/auth/logout` | Cerrar sesión |
+| GET | `/api/auth/me` | Obtener usuario actual |
 
 ## 🛣️ Roadmap
 
 ### Próximas mejoras
-- [ ] **Notificaciones** - Email, Slack, Discord webhooks
-- [ ] **Autenticación** - Sistema de usuarios y roles
-- [ ] **Status Page pública** - Página de estado para tus clientes
-- [ ] **Múltiples ubicaciones** - Checks desde diferentes regiones
+- [x] **Notificaciones** - Sistema base implementado
+- [x] **Autenticación** - Sistema de login con JWT
+- [x] **Status Page pública** - Página de estado para tus clientes
+- [x] **Múltiples tipos de checks** - HTTP, TCP, Ping, DNS
+- [x] **Métricas de rendimiento** - Latencia y uptime tracking
 - [ ] **SSL Certificate monitoring** - Alertas de expiración de certificados
 - [ ] **Docker** - Contenedores para fácil despliegue
+- [ ] **Webhooks** - Integración con Slack, Discord, Telegram
+- [ ] **Checks desde múltiples ubicaciones** - US, EU, Asia
 
-Consulta [`IMPROVEMENTS.md`](IMPROVEMENTS.md) para la lista completa.
+Consulta [`IMPROVEMENTS.md`](IMPROVEMENTS.md) para la lista completa de mejoras implementadas y pendientes.
 
 ## 🛡️ Tecnologías
 
