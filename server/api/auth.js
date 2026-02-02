@@ -5,16 +5,28 @@ import dotenv from 'dotenv';
 import { db } from '../lib/db.js';
 import { users } from '../lib/schema.js';
 import { eq, or } from 'drizzle-orm';
+import SQLiteStore from 'connect-sqlite3';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const router = express.Router();
 
-// Middleware de sesión
+// Middleware de sesión con almacenamiento persistente en SQLite
 export const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET || 'default-secret-change-this',
   resave: false,
   saveUninitialized: false,
+  store: new SQLiteStore({
+    db: 'sessions.db',
+    dir: path.join(__dirname, '../sessions'),
+    table: 'sessions',
+    ttl: 24 * 60 * 60 // 24 horas en segundos
+  }),
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
