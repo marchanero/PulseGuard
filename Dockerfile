@@ -19,7 +19,7 @@ COPY . .
 RUN npx prisma generate
 
 # Ejecutar migraciones de base de datos
-RUN npx prisma migrate deploy
+RUN DATABASE_URL="file:/app/prisma/prisma/dev.db" npx prisma migrate deploy
 
 # Construir el frontend
 RUN npm run build
