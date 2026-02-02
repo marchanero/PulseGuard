@@ -47,6 +47,6 @@ jobs:
 
       - name: Deploy to Fly
         run: |
-          flyctl deploy --remote-only --yes
+          flyctl deploy --remote-only --yes --ha=false
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
