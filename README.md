@@ -89,7 +89,70 @@ Esto iniciará:
 | `C` | Toggle modo compacto |
 | `?` | Mostrar ayuda de atajos |
 
-## 📁 Estructura del Proyecto
+## 🚀 Despliegue en Fly.io
+
+PulseGuard está configurado para desplegarse automáticamente en [Fly.io](https://fly.io).
+
+### URL de producción
+
+🔗 **https://pulseguard-fragrant-paper-4573.fly.dev**
+
+### Despliegue automático
+
+El proyecto usa GitHub Actions para CI/CD:
+
+1. **Rama `develop`** → Desarrollo (sin despliegue)
+2. **Rama `main`** → Producción (despliegue automático)
+
+### Flujo de trabajo
+
+1. Trabaja en la rama `develop`
+2. Haz commits y push a `develop`
+3. Crea un Pull Request a `main`
+4. Merge a `main` → Se ejecuta el workflow de CI/CD
+5. Los tests pasan → Deploy automático a Fly.io
+
+### Configuración requerida
+
+Para el primer despliegue, necesitas:
+
+1. **Instalar flyctl**
+```bash
+curl -L https://fly.io/install.sh | sh
+```
+
+2. **Obtener token de API**
+```bash
+flyctl auth token
+```
+
+3. **Añadir secreto en GitHub**
+   - Ve a Settings → Secrets and variables → Actions
+   - Crea un secreto llamado `FLY_API_TOKEN`
+   - Pega el token obtenido
+
+### Variables de entorno en producción
+
+Las siguientes variables se configuran en `fly.toml`:
+
+```toml
+[env]
+NODE_ENV = 'production'
+PORT = '3001'
+DATABASE_URL = 'file:/app/prisma/prisma/dev.db'
+```
+
+### Volumen de datos
+
+Fly.io monta un volumen persistente para la base de datos SQLite:
+
+```toml
+[[mounts]]
+source = 'pulseguard_data'
+destination = '/app/prisma/prisma'
+```
+
+## � Estructura del Proyecto
 
 ```
 PulseGuard/
