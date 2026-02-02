@@ -1,8 +1,5 @@
-# Dockerfile para PulseGuard en Fly.io
+# Dockerfile para PulseGuard en Fly.io con TursoDB
 FROM node:20-alpine
-
-# Instalar dependencias necesarias para Prisma
-RUN apk add --no-cache openssl
 
 WORKDIR /app
 
@@ -17,9 +14,6 @@ COPY . .
 
 # Generar Prisma Client
 RUN npx prisma generate
-
-# Ejecutar migraciones de base de datos
-RUN DATABASE_URL="file:/app/prisma/prisma/dev.db" npx prisma migrate deploy
 
 # Construir el frontend
 RUN npm run build
