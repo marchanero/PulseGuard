@@ -17,14 +17,6 @@ jobs:
         with:
           flyctl-version: latest
 
-      - name: Login to Fly
-        run: flyctl auth login --access-token ${{ secrets.FLY_API_TOKEN }}
-
-      - name: Create Fly App if not exists
-        run: flyctl apps list | grep -q pulseguard || flyctl apps create pulseguard
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-
       - name: Deploy to Fly
         run: flyctl deploy --remote-only
         env:
