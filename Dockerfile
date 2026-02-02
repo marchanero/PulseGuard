@@ -18,6 +18,9 @@ COPY . .
 # Generar Prisma Client
 RUN npx prisma generate
 
+# Ejecutar migraciones de base de datos
+RUN npx prisma migrate deploy
+
 # Construir el frontend
 RUN npm run build
 
