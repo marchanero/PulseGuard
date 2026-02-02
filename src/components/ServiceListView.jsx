@@ -1,7 +1,8 @@
 import ServiceCharts from './ServiceCharts';
 import { useState } from 'react';
+import { Lock, Unlock } from 'lucide-react';
 
-function ServiceListView({ services, onDelete, onCheck, isCompact }) {
+function ServiceListView({ services, onDelete, onCheck, onTogglePublic, isCompact }) {
   const [expandedService, setExpandedService] = useState(null);
 
   const getStatusConfig = (status) => {
@@ -85,8 +86,18 @@ function ServiceListView({ services, onDelete, onCheck, isCompact }) {
                 <div className="col-span-4">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-slate-300 dark:bg-gray-600 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-medium text-slate-900 dark:text-white">{service.name}</h3>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-slate-900 dark:text-white truncate">{service.name}</h3>
+                        <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-medium rounded-full flex-shrink-0 ${
+                          service.isPublic 
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' 
+                            : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                        }`}>
+                          {service.isPublic ? <Unlock className="w-2.5 h-2.5" /> : <Lock className="w-2.5 h-2.5" />}
+                          {service.isPublic ? 'Público' : 'Privado'}
+                        </span>
+                      </div>
                       <p className="text-sm text-slate-500 dark:text-gray-400 truncate max-w-[200px]">{service.url}</p>
                     </div>
                   </div>
@@ -123,6 +134,20 @@ function ServiceListView({ services, onDelete, onCheck, isCompact }) {
 
                 {/* Actions */}
                 <div className="col-span-2 flex items-center justify-end gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTogglePublic && onTogglePublic(service.id, !service.isPublic);
+                    }}
+                    className={`p-2 rounded-lg transition-colors ${
+                      service.isPublic 
+                        ? 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20' 
+                        : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                    }`}
+                    title={service.isPublic ? 'Público - Click para hacer privado' : 'Privado - Click para hacer público'}
+                  >
+                    {service.isPublic ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                  </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -163,7 +188,7 @@ function ServiceListView({ services, onDelete, onCheck, isCompact }) {
                 <div className="px-6 py-4 bg-slate-50 dark:bg-gray-900/30 border-t border-slate-200 dark:border-gray-700">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Charts */}
-                    <ServiceCharts service={service} />
+                    <ServiceCharts logs={service.logs} uptime={service.uptime} />
 
                     {/* Info */}
                     <div className="space-y-4">
@@ -182,8 +207,19 @@ function ServiceListView({ services, onDelete, onCheck, isCompact }) {
                             </a>
                           </div>
                           <div className="flex justify-between">
+                            <span className="text-slate-600 dark:text-gray-400">Estado:</span>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                              service.isPublic 
+                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' 
+                                : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                            }`}>
+                              {service.isPublic ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                              {service.isPublic ? 'Público' : 'Privado'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
                             <span className="text-slate-600 dark:text-gray-400">Intervalo:</span>
-                            <span className="text-slate-900 dark:text-white">{service.checkInterval / 1000}s</span>
+                            <span className="text-slate-900 dark:text-white">{service.checkInterval}s</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-slate-600 dark:text-gray-400">Última verificación:</span>

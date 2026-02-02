@@ -1,5 +1,6 @@
 import express from 'express';
-import prisma from '../lib/prisma.js';
+import { db, serviceLogs as serviceLogTable, services as serviceTable } from '../lib/db.js';
+import { eq, desc, gte, and, sql, asc, count } from 'drizzle-orm';
 
 const router = express.Router();
 
@@ -9,21 +10,16 @@ router.get('/heatmap/:id', async (req, res) => {
     const serviceId = parseInt(req.params.id);
     const days = parseInt(req.query.days) || 90;
     
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
+    const startDate = Date.now() - (days * 24 * 60 * 60 * 1000);
     
     // Obtener logs del período
-    const logs = await prisma.serviceLog.findMany({
-      where: {
-        serviceId,
-        timestamp: {
-          gte: startDate
-        }
-      },
-      orderBy: {
-        timestamp: 'asc'
-      }
-    });
+    const logs = await db.select()
+      .from(serviceLogTable)
+      .where(and(
+        eq(serviceLogTable.serviceId, serviceId),
+        gte(serviceLogTable.timestamp, startDate)
+      ))
+      .orderBy(asc(serviceLogTable.timestamp));
     
     // Agrupar por día
     const dailyStats = {};
@@ -44,7 +40,7 @@ router.get('/heatmap/:id', async (req, res) => {
     
     // Contar checks por día
     logs.forEach(log => {
-      const dateKey = log.timestamp.toISOString().split('T')[0];
+      const dateKey = new Date(log.timestamp).toISOString().split('T')[0];
       if (dailyStats[dateKey]) {
         dailyStats[dateKey].total++;
         if (log.status === 'online') {
@@ -82,17 +78,14 @@ router.get('/uptime-history/:id', async (req, res) => {
     const result = {};
     
     for (const days of periods) {
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
+      const startDate = Date.now() - (days * 24 * 60 * 60 * 1000);
       
-      const logs = await prisma.serviceLog.findMany({
-        where: {
-          serviceId,
-          timestamp: {
-            gte: startDate
-          }
-        }
-      });
+      const logs = await db.select()
+        .from(serviceLogTable)
+        .where(and(
+          eq(serviceLogTable.serviceId, serviceId),
+          gte(serviceLogTable.timestamp, startDate)
+        ));
       
       const total = logs.length;
       const online = logs.filter(l => l.status === 'online').length;
@@ -120,15 +113,11 @@ router.get('/timeline/:id', async (req, res) => {
     const serviceId = parseInt(req.params.id);
     const limit = parseInt(req.query.limit) || 50;
     
-    const logs = await prisma.serviceLog.findMany({
-      where: {
-        serviceId
-      },
-      orderBy: {
-        timestamp: 'desc'
-      },
-      take: limit
-    });
+    const logs = await db.select()
+      .from(serviceLogTable)
+      .where(eq(serviceLogTable.serviceId, serviceId))
+      .orderBy(desc(serviceLogTable.timestamp))
+      .limit(limit);
     
     // Detectar cambios de estado
     const events = [];
@@ -169,23 +158,17 @@ router.get('/incidents/:id', async (req, res) => {
     const serviceId = parseInt(req.params.id);
     const days = parseInt(req.query.days) || 30;
     
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
+    const startDate = Date.now() - (days * 24 * 60 * 60 * 1000);
     
-    const logs = await prisma.serviceLog.findMany({
-      where: {
-        serviceId,
-        timestamp: {
-          gte: startDate
-        },
-        status: {
-          in: ['offline', 'error']
-        }
-      },
-      orderBy: {
-        timestamp: 'desc'
-      }
-    });
+    const logs = await db.select()
+      .from(serviceLogTable)
+      .where(and(
+        eq(serviceLogTable.serviceId, serviceId),
+        gte(serviceLogTable.timestamp, startDate),
+        // status IN ('offline', 'error')
+        sql`${serviceLogTable.status} IN ('offline', 'error')`
+      ))
+      .orderBy(desc(serviceLogTable.timestamp));
     
     // Agrupar incidentes consecutivos
     const incidents = [];
@@ -235,30 +218,27 @@ router.get('/incidents/:id', async (req, res) => {
 router.get('/dashboard-stats', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 30;
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
+    const startDate = Date.now() - (days * 24 * 60 * 60 * 1000);
     
     // Total de servicios
-    const totalServices = await prisma.service.count({
-      where: { isDeleted: false }
-    });
+    const totalServicesResult = await db.select({ count: count() })
+      .from(serviceTable)
+      .where(eq(serviceTable.isDeleted, false));
+    const totalServices = totalServicesResult[0]?.count || 0;
     
     // Servicios online
-    const onlineServices = await prisma.service.count({
-      where: { 
-        isDeleted: false,
-        status: 'online'
-      }
-    });
+    const onlineServicesResult = await db.select({ count: count() })
+      .from(serviceTable)
+      .where(and(
+        eq(serviceTable.isDeleted, false),
+        eq(serviceTable.status, 'online')
+      ));
+    const onlineServices = onlineServicesResult[0]?.count || 0;
     
     // Logs del período
-    const logs = await prisma.serviceLog.findMany({
-      where: {
-        timestamp: {
-          gte: startDate
-        }
-      }
-    });
+    const logs = await db.select()
+      .from(serviceLogTable)
+      .where(gte(serviceLogTable.timestamp, startDate));
     
     const totalChecks = logs.length;
     const successfulChecks = logs.filter(l => l.status === 'online').length;

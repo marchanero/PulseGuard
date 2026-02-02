@@ -1,9 +1,14 @@
 import { useState } from 'react';
-import { Shield, Lock, Eye, EyeOff } from 'lucide-react';
+import { Shield, Lock, Eye, EyeOff, ArrowRight, UserPlus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth.js';
 import { Button } from './ui';
+import { Register } from './Register.jsx';
+
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export function Login() {
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -15,7 +20,7 @@ export function Login() {
     setError('');
     setIsLoading(true);
 
-    const result = await login(password);
+    const result = await login(username, password);
     
     if (!result.success) {
       setError(result.error || 'Error de autenticación');
@@ -23,6 +28,10 @@ export function Login() {
     
     setIsLoading(false);
   };
+
+  if (isRegistering) {
+    return <Register onSwitchToLogin={() => setIsRegistering(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
@@ -51,12 +60,30 @@ export function Login() {
                 Acceso protegido
               </h2>
               <p className="text-sm text-slate-500 dark:text-gray-400">
-                Introduce tu contraseña para continuar
+                Introduce tus credenciales para continuar
               </p>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label 
+                htmlFor="username" 
+                className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2"
+              >
+                Usuario o email
+              </label>
+              <input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="usuario o correo@ejemplo.com"
+                autoFocus
+              />
+            </div>
+
             <div>
               <label 
                 htmlFor="password" 
@@ -72,7 +99,6 @@ export function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-3 pr-12 rounded-xl border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="••••••••"
-                  autoFocus
                 />
                 <button
                   type="button"
@@ -100,7 +126,7 @@ export function Login() {
               type="submit"
               variant="primary"
               className="w-full py-3"
-              disabled={isLoading || !password}
+              disabled={isLoading || !username || !password}
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -111,10 +137,24 @@ export function Login() {
                   Verificando...
                 </span>
               ) : (
-                'Acceder'
+                <span className="flex items-center justify-center gap-2">
+                  Acceder
+                  <ArrowRight className="w-5 h-5" />
+                </span>
               )}
             </Button>
           </form>
+
+          {/* Enlace a registro */}
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => setIsRegistering(true)}
+              className="text-sm text-slate-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center justify-center gap-2"
+            >
+              <UserPlus className="w-4 h-4" />
+              ¿No tienes cuenta? <span className="font-medium">Regístrate</span>
+            </button>
+          </div>
         </div>
 
         {/* Footer */}

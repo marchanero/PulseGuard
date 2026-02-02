@@ -158,7 +158,7 @@ function ServiceDrawer({ service, isOpen, onClose }) {
             {/* Charts */}
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Distribución de Estado</h3>
-              <ServiceCharts service={service} />
+              <ServiceCharts logs={service.logs} uptime={service.uptime} />
             </div>
 
             {/* Details */}

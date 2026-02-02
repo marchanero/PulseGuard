@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"vite\"",
-    "server": "nodemon server/index.js",
+    "server": "nodemon -r dotenv/config server/index.js",
     "build": "vite build",
     "start": "node server/index.js",
     "lint": "eslint .",
@@ -22,11 +22,13 @@
     "test:e2e:open": "start-server-and-test dev http://localhost:5173 cypress:open"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.0",
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dns-socket": "^4.2.2",
     "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.45.1",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "lucide-react": "^0.563.0",
