@@ -14,5 +14,3 @@ README.md
 coverage
 .nyc_output
 .github
-sessions/
-sessions.db
