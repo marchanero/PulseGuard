@@ -47,7 +47,9 @@ jobs:
 
       - name: Deploy to Fly
         run: |
-          flyctl apps list --json | grep -q '"name":"pulseguard"' || flyctl apps create pulseguard --org personal -y
+          if ! flyctl apps list --json | grep -q '"name":"pulseguard"'; then
+            flyctl apps create pulseguard --org personal -y
+          fi
           flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
