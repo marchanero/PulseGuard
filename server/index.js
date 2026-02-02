@@ -9,7 +9,8 @@ import statusRouter from './api/status.js';
 import analyticsRouter from './api/analytics.js';
 import { startAllMonitoring, stopAllMonitoring } from './utils/monitor.js';
 
-dotenv.config();
+// Cargar .env.local primero, luego .env
+dotenv.config({ path: ['.env.local', '.env'] });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

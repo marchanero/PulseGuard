@@ -5,6 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Verificar sesión al cargar
@@ -19,27 +20,32 @@ export function AuthProvider({ children }) {
       });
       const data = await response.json();
       setIsAuthenticated(data.authenticated);
+      if (data.user) {
+        setUser(data.user);
+      }
     } catch (error) {
       console.error('Error checking auth:', error);
       setIsAuthenticated(false);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const login = async (password) => {
+  const login = async (username, password) => {
     try {
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ password })
+        body: JSON.stringify({ username, password })
       });
 
       const data = await response.json();
 
       if (response.ok) {
         setIsAuthenticated(true);
+        setUser(data.user);
         return { success: true };
       } else {
         return { success: false, error: data.error };
@@ -57,6 +63,7 @@ export function AuthProvider({ children }) {
         credentials: 'include'
       });
       setIsAuthenticated(false);
+      setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -64,6 +71,7 @@ export function AuthProvider({ children }) {
 
   const value = {
     isAuthenticated,
+    user,
     isLoading,
     login,
     logout,
