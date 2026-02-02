@@ -133,24 +133,18 @@ flyctl auth token
 
 ### Variables de entorno en producción
 
-Las siguientes variables se configuran en `fly.toml`:
+La base de datos usa [TursoDB](https://turso.io/) (libSQL) en producción. Configure el secreto en Fly.io:
 
-```toml
-[env]
-NODE_ENV = 'production'
-PORT = '3001'
-DATABASE_URL = 'file:/app/prisma/prisma/dev.db'
+```bash
+fly secrets set DATABASE_URL="libsql://pulseguard-marchanero.aws-eu-west-1.turso.io?authToken=TU_TOKEN"
 ```
 
-### Volumen de datos
+### Base de datos
 
-Fly.io monta un volumen persistente para la base de datos SQLite:
+- **Desarrollo:** SQLite local (`file:./prisma/dev.db`)
+- **Producción:** TursoDB (libSQL)
 
-```toml
-[[mounts]]
-source = 'pulseguard_data'
-destination = '/app/prisma/prisma'
-```
+Las migraciones se aplican automáticamente en producción.
 
 ## � Estructura del Proyecto
 
@@ -249,7 +243,7 @@ Consulta [`IMPROVEMENTS.md`](IMPROVEMENTS.md) para la lista completa de mejoras 
 ### Backend
 - **Express.js** - Framework web
 - **Prisma ORM** - Base de datos
-- **SQLite** - Base de datos ligera
+- **TursoDB (libSQL)** - Base de datos cloud
 - **Node-cron** - Tareas programadas
 
 ## 🤝 Contribuir
