@@ -21,7 +21,7 @@ jobs:
         run: flyctl auth login --access-token ${{ secrets.FLY_API_TOKEN }}
 
       - name: Create Fly App if not exists
-        run: flyctl apps list | grep -q pulseguard || flyctl apps create pulseguard-fragrant-paper-4573
+        run: flyctl apps list | grep -q pulseguard || flyctl apps create pulseguard
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
