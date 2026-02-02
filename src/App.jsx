@@ -21,7 +21,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useCompactMode } from './hooks/useCompactMode';
 import { useTheme } from './context/theme';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 function App() {
   const [services, setServices] = useState([]);
