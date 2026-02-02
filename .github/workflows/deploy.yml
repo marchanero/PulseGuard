@@ -47,7 +47,6 @@ jobs:
 
       - name: Deploy to Fly
         run: |
-          flyctl apps create pulseguard-fragrant-paper-4573 --org personal -y 2>/dev/null || true
           flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
