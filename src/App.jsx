@@ -46,9 +46,12 @@ function App() {
   // Detectar si estamos en la página de status
   const isStatusPage = window.location.pathname === '/status';
 
+  // Cargar servicios al iniciar y cuando se autentica
   useEffect(() => {
-    fetchServices();
-  }, []);
+    if (isAuthenticated) {
+      fetchServices();
+    }
+  }, [isAuthenticated]);
 
   // Keyboard shortcuts
   useKeyboardShortcuts([
@@ -161,6 +164,27 @@ function App() {
     }
   };
 
+  const handleTogglePublic = async (id, isPublic) => {
+    try {
+      const response = await fetch(`${API_URL}/services/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ isPublic })
+      });
+      
+      if (response.ok) {
+        fetchServices();
+        toast.success(isPublic ? 'Servicio marcado como público' : 'Servicio marcado como privado');
+      } else {
+        toast.error('Error al cambiar el estado del servicio');
+      }
+    } catch (error) {
+      console.error('Error toggling public:', error);
+      toast.error('Error al cambiar el estado del servicio');
+    }
+  };
+
   const handleCheckAll = async () => {
     try {
       const response = await fetch(`${API_URL}/services/check-all`, {
@@ -267,6 +291,7 @@ function App() {
                     services={filteredServices}
                     onDelete={handleDeleteService}
                     onCheck={handleCheckService}
+                    onTogglePublic={handleTogglePublic}
                     onViewDetails={(service) => {
                       setSelectedService(service);
                       setIsDrawerOpen(true);
@@ -278,6 +303,7 @@ function App() {
                     services={filteredServices}
                     onDelete={handleDeleteService}
                     onCheck={handleCheckService}
+                    onTogglePublic={handleTogglePublic}
                     isCompact={isCompact}
                   />
                 )}

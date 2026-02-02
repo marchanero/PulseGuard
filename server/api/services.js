@@ -1,25 +1,67 @@
 import express from 'express';
-import prisma from '../lib/prisma.js';
+import { db, services as serviceTable, serviceLogs as serviceLogTable, performanceMetrics as performanceMetricTable } from '../lib/db.js';
 import { checkService } from '../utils/checkTypes.js';
 import { startMonitoring, stopMonitoring } from '../utils/monitor.js';
+import { eq, desc, asc, and, gte, sql } from 'drizzle-orm';
 
 const router = express.Router();
 
 // Obtener todos los servicios activos (no eliminados)
 router.get('/', async (req, res) => {
   try {
-    const services = await prisma.service.findMany({
-      where: { isDeleted: false },
-      include: {
-        logs: {
-          orderBy: { timestamp: 'desc' },
-          take: 10
-        }
-      },
-      orderBy: { createdAt: 'desc' }
+    const services = await db.select({
+      id: serviceTable.id,
+      name: serviceTable.name,
+      type: serviceTable.type,
+      url: serviceTable.url,
+      host: serviceTable.host,
+      port: serviceTable.port,
+      description: serviceTable.description,
+      checkInterval: serviceTable.checkInterval,
+      isActive: serviceTable.isActive,
+      isPublic: serviceTable.isPublic,
+      status: serviceTable.status,
+      responseTime: serviceTable.responseTime,
+      uptime: serviceTable.uptime,
+      lastChecked: serviceTable.lastChecked,
+      totalMonitoredTime: serviceTable.totalMonitoredTime,
+      onlineTime: serviceTable.onlineTime,
+      createdAt: serviceTable.createdAt,
+      updatedAt: serviceTable.updatedAt,
+      logs: sql<typeof serviceLogTable>`(SELECT json_group_array(
+        json_object(
+          'id', ${serviceLogTable.id},
+          'serviceId', ${serviceLogTable.serviceId},
+          'status', ${serviceLogTable.status},
+          'responseTime', ${serviceLogTable.responseTime},
+          'message', ${serviceLogTable.message},
+          'timestamp', ${serviceLogTable.timestamp}
+        )
+      ) FROM ${serviceLogTable} WHERE ${serviceLogTable.serviceId} = ${serviceTable.id} ORDER BY ${serviceLogTable.timestamp} DESC LIMIT 10)`
+    })
+    .from(serviceTable)
+    .where(eq(serviceTable.isDeleted, false))
+    .orderBy(desc(serviceTable.createdAt));
+    
+    // Parsear los logs como JSON
+    const parsedServices = services.map(s => {
+      try {
+        return {
+          ...s,
+          logs: s.logs ? JSON.parse(s.logs) : []
+        };
+      } catch (error) {
+        console.error('Error parsing logs for service', s.id, ':', error);
+        return {
+          ...s,
+          logs: []
+        };
+      }
     });
-    res.json(services);
+    
+    res.json(parsedServices);
   } catch (error) {
+    console.error('Error al obtener servicios:', error);
     res.status(500).json({ error: 'Error al obtener servicios', message: error.message });
   }
 });
@@ -27,17 +69,57 @@ router.get('/', async (req, res) => {
 // Obtener servicios archivados (eliminados)
 router.get('/archived', async (req, res) => {
   try {
-    const services = await prisma.service.findMany({
-      where: { isDeleted: true },
-      include: {
-        logs: {
-          orderBy: { timestamp: 'desc' },
-          take: 10
-        }
-      },
-      orderBy: { deletedAt: 'desc' }
+    const services = await db.select({
+      id: serviceTable.id,
+      name: serviceTable.name,
+      type: serviceTable.type,
+      url: serviceTable.url,
+      host: serviceTable.host,
+      port: serviceTable.port,
+      description: serviceTable.description,
+      checkInterval: serviceTable.checkInterval,
+      isActive: serviceTable.isActive,
+      isPublic: serviceTable.isPublic,
+      status: serviceTable.status,
+      responseTime: serviceTable.responseTime,
+      uptime: serviceTable.uptime,
+      lastChecked: serviceTable.lastChecked,
+      totalMonitoredTime: serviceTable.totalMonitoredTime,
+      onlineTime: serviceTable.onlineTime,
+      deletedAt: serviceTable.deletedAt,
+      createdAt: serviceTable.createdAt,
+      updatedAt: serviceTable.updatedAt,
+      logs: sql<typeof serviceLogTable>`(SELECT json_group_array(
+        json_object(
+          'id', ${serviceLogTable.id},
+          'serviceId', ${serviceLogTable.serviceId},
+          'status', ${serviceLogTable.status},
+          'responseTime', ${serviceLogTable.responseTime},
+          'message', ${serviceLogTable.message},
+          'timestamp', ${serviceLogTable.timestamp}
+        )
+      ) FROM ${serviceLogTable} WHERE ${serviceLogTable.serviceId} = ${serviceTable.id} ORDER BY ${serviceLogTable.timestamp} DESC LIMIT 10)`
+    })
+    .from(serviceTable)
+    .where(eq(serviceTable.isDeleted, true))
+    .orderBy(desc(serviceTable.deletedAt));
+    
+    const parsedServices = services.map(s => {
+      try {
+        return {
+          ...s,
+          logs: s.logs ? JSON.parse(s.logs) : []
+        };
+      } catch (error) {
+        console.error('Error parsing logs for service', s.id, ':', error);
+        return {
+          ...s,
+          logs: []
+        };
+      }
     });
-    res.json(services);
+    
+    res.json(parsedServices);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener servicios archivados', message: error.message });
   }
@@ -46,18 +128,51 @@ router.get('/archived', async (req, res) => {
 // Obtener un servicio por ID
 router.get('/:id', async (req, res) => {
   try {
-    const service = await prisma.service.findUnique({
-      where: { id: parseInt(req.params.id) },
-      include: {
-        logs: {
-          orderBy: { timestamp: 'desc' },
-          take: 50
-        }
-      }
-    });
+    const serviceId = parseInt(req.params.id);
     
-    if (!service) {
+    const services = await db.select({
+      id: serviceTable.id,
+      name: serviceTable.name,
+      type: serviceTable.type,
+      url: serviceTable.url,
+      host: serviceTable.host,
+      port: serviceTable.port,
+      description: serviceTable.description,
+      checkInterval: serviceTable.checkInterval,
+      isActive: serviceTable.isActive,
+      isPublic: serviceTable.isPublic,
+      status: serviceTable.status,
+      responseTime: serviceTable.responseTime,
+      uptime: serviceTable.uptime,
+      lastChecked: serviceTable.lastChecked,
+      totalMonitoredTime: serviceTable.totalMonitoredTime,
+      onlineTime: serviceTable.onlineTime,
+      createdAt: serviceTable.createdAt,
+      updatedAt: serviceTable.updatedAt,
+      logs: sql<typeof serviceLogTable>`(SELECT json_group_array(
+        json_object(
+          'id', ${serviceLogTable.id},
+          'serviceId', ${serviceLogTable.serviceId},
+          'status', ${serviceLogTable.status},
+          'responseTime', ${serviceLogTable.responseTime},
+          'message', ${serviceLogTable.message},
+          'timestamp', ${serviceLogTable.timestamp}
+        )
+      ) FROM ${serviceLogTable} WHERE ${serviceLogTable.serviceId} = ${serviceTable.id} ORDER BY ${serviceLogTable.timestamp} DESC LIMIT 50)`
+    })
+    .from(serviceTable)
+    .where(eq(serviceTable.id, serviceId));
+    
+    if (services.length === 0) {
       return res.status(404).json({ error: 'Servicio no encontrado' });
+    }
+    
+    const service = services[0];
+    try {
+      service.logs = service.logs ? JSON.parse(service.logs) : [];
+    } catch (error) {
+      console.error('Error parsing logs for service', service.id, ':', error);
+      service.logs = [];
     }
     
     res.json(service);
@@ -97,29 +212,30 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'URL o host es requerido' });
     }
     
-    const newService = await prisma.service.create({
-      data: {
-        name,
-        type: serviceType,
-        url: serviceUrl,
-        host: host || null,
-        port: port ? parseInt(port) : null,
-        description: description || '',
-        checkInterval: interval,
-        isActive: isActive !== undefined ? isActive : true,
-        status: 'unknown',
-        uptime: 100
-      }
-    });
+    const now = Date.now();
+    const newService = await db.insert(serviceTable).values({
+      name,
+      type: serviceType,
+      url: serviceUrl,
+      host: host || null,
+      port: port ? parseInt(port) : null,
+      description: description || '',
+      checkInterval: interval,
+      isActive: isActive !== undefined ? isActive : true,
+      status: 'unknown',
+      uptime: 100,
+      createdAt: now,
+      updatedAt: now
+    }).returning();
     
-    console.log('Servicio creado:', newService);
+    console.log('Servicio creado:', newService[0]);
     
     // Iniciar monitoreo automático si está activo
-    if (newService.isActive) {
-      startMonitoring(newService);
+    if (newService[0].isActive) {
+      startMonitoring(newService[0]);
     }
     
-    res.status(201).json(newService);
+    res.status(201).json(newService[0]);
   } catch (error) {
     console.error('Error creando servicio:', error);
     res.status(500).json({ error: 'Error al crear servicio', message: error.message });
@@ -129,14 +245,13 @@ router.post('/', async (req, res) => {
 // Actualizar un servicio
 router.put('/:id', async (req, res) => {
   try {
-    const { name, type, url, host, port, description, checkInterval, isActive } = req.body;
+    const serviceId = parseInt(req.params.id);
+    const { name, type, url, host, port, description, checkInterval, isActive, isPublic } = req.body;
     
     // Obtener el servicio actual
-    const currentService = await prisma.service.findUnique({
-      where: { id: parseInt(req.params.id) }
-    });
+    const existing = await db.select().from(serviceTable).where(eq(serviceTable.id, serviceId));
     
-    if (!currentService) {
+    if (existing.length === 0) {
       return res.status(404).json({ error: 'Servicio no encontrado' });
     }
     
@@ -152,37 +267,40 @@ router.put('/:id', async (req, res) => {
     // Validar tipo de servicio
     const validTypes = ['HTTP', 'HTTPS', 'PING', 'DNS', 'TCP', 'SSL'];
     
-    const updatedService = await prisma.service.update({
-      where: { id: parseInt(req.params.id) },
-      data: {
-        ...(name && { name }),
-        ...(type && validTypes.includes(type) && { type }),
-        ...(url && { url }),
-        ...(host !== undefined && { host }),
-        ...(port !== undefined && { port: port ? parseInt(port) : null }),
-        ...(description !== undefined && { description }),
-        ...(interval && { checkInterval: interval }),
-        ...(isActive !== undefined && { isActive })
-      }
-    });
+    const updateData = {
+      updatedAt: Date.now()
+    };
+    
+    if (name) updateData.name = name;
+    if (type && validTypes.includes(type)) updateData.type = type;
+    if (url) updateData.url = url;
+    if (host !== undefined) updateData.host = host;
+    if (port !== undefined) updateData.port = port ? parseInt(port) : null;
+    if (description !== undefined) updateData.description = description;
+    if (interval) updateData.checkInterval = interval;
+    if (isActive !== undefined) updateData.isActive = isActive;
+    if (isPublic !== undefined) updateData.isPublic = isPublic;
+    
+    const updatedService = await db.update(serviceTable)
+      .set(updateData)
+      .where(eq(serviceTable.id, serviceId))
+      .returning();
     
     // Manejar el monitoreo según el estado
     if (isActive !== undefined) {
       if (isActive) {
-        startMonitoring(updatedService);
+        startMonitoring(updatedService[0]);
       } else {
-        stopMonitoring(updatedService.id);
+        stopMonitoring(serviceId);
       }
-    } else if (updatedService.isActive && (checkInterval || url || type)) {
+    } else if (updatedService[0].isActive && (checkInterval || url || type)) {
       // Si cambió el intervalo, URL o tipo, reiniciar monitoreo
-      startMonitoring(updatedService);
+      startMonitoring(updatedService[0]);
     }
     
-    res.json(updatedService);
+    res.json(updatedService[0]);
   } catch (error) {
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Servicio no encontrado' });
-    }
+    console.error('Error actualizando servicio:', error);
     res.status(500).json({ error: 'Error al actualizar servicio', message: error.message });
   }
 });
@@ -196,20 +314,18 @@ router.delete('/:id', async (req, res) => {
     stopMonitoring(serviceId);
     
     // Soft delete - marcar como eliminado pero mantener en BD
-    await prisma.service.update({
-      where: { id: serviceId },
-      data: {
+    await db.update(serviceTable)
+      .set({
         isDeleted: true,
-        deletedAt: new Date(),
-        isActive: false // Desactivar monitoreo
-      }
-    });
+        deletedAt: Date.now(),
+        isActive: false, // Desactivar monitoreo
+        updatedAt: Date.now()
+      })
+      .where(eq(serviceTable.id, serviceId));
     
     res.status(204).send();
   } catch (error) {
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Servicio no encontrado' });
-    }
+    console.error('Error archivando servicio:', error);
     res.status(500).json({ error: 'Error al archivar servicio', message: error.message });
   }
 });
@@ -219,25 +335,28 @@ router.post('/:id/restore', async (req, res) => {
   try {
     const serviceId = parseInt(req.params.id);
     
-    const service = await prisma.service.update({
-      where: { id: serviceId },
-      data: {
+    const updated = await db.update(serviceTable)
+      .set({
         isDeleted: false,
         deletedAt: null,
-        isActive: true
-      }
-    });
+        isActive: true,
+        updatedAt: Date.now()
+      })
+      .where(eq(serviceTable.id, serviceId))
+      .returning();
     
-    // Reiniciar monitoreo
-    if (service.isActive) {
-      startMonitoring(service);
-    }
-    
-    res.json(service);
-  } catch (error) {
-    if (error.code === 'P2025') {
+    if (updated.length === 0) {
       return res.status(404).json({ error: 'Servicio no encontrado' });
     }
+    
+    // Reiniciar monitoreo
+    if (updated[0].isActive) {
+      startMonitoring(updated[0]);
+    }
+    
+    res.json(updated[0]);
+  } catch (error) {
+    console.error('Error restaurando servicio:', error);
     res.status(500).json({ error: 'Error al restaurar servicio', message: error.message });
   }
 });
@@ -250,16 +369,16 @@ router.delete('/:id/permanent', async (req, res) => {
     // Detener monitoreo
     stopMonitoring(serviceId);
     
-    // Eliminar permanentemente
-    await prisma.service.delete({
-      where: { id: serviceId }
-    });
+    // Eliminar logs primero (por foreign key)
+    await db.delete(serviceLogTable).where(eq(serviceLogTable.serviceId, serviceId));
+    await db.delete(performanceMetricTable).where(eq(performanceMetricTable.serviceId, serviceId));
+    
+    // Eliminar el servicio
+    await db.delete(serviceTable).where(eq(serviceTable.id, serviceId));
     
     res.status(204).send();
   } catch (error) {
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Servicio no encontrado' });
-    }
+    console.error('Error eliminando servicio:', error);
     res.status(500).json({ error: 'Error al eliminar servicio permanentemente', message: error.message });
   }
 });
@@ -267,16 +386,17 @@ router.delete('/:id/permanent', async (req, res) => {
 // Verificar el estado de un servicio (manual)
 router.post('/:id/check', async (req, res) => {
   try {
-    const service = await prisma.service.findUnique({
-      where: { id: parseInt(req.params.id) }
-    });
+    const serviceId = parseInt(req.params.id);
     
-    if (!service) {
+    const existing = await db.select().from(serviceTable).where(eq(serviceTable.id, serviceId));
+    
+    if (existing.length === 0) {
       return res.status(404).json({ error: 'Servicio no encontrado' });
     }
     
+    const service = existing[0];
     const result = await checkService(service);
-    const now = new Date();
+    const now = Date.now();
     
     // Calcular uptime basado en el estado actual
     let newUptime = service.uptime || 100;
@@ -285,7 +405,7 @@ router.post('/:id/check', async (req, res) => {
     
     const lastChecked = service.lastChecked;
     if (lastChecked) {
-      const timeSinceLastCheck = now - new Date(lastChecked);
+      const timeSinceLastCheck = now - lastChecked;
       totalMonitoredTime = totalMonitoredTime + timeSinceLastCheck;
       // Consideramos "online" tanto el estado 'online' como 'degraded' (funciona pero con problemas)
       const wasOnlineOrDegraded = result.status === 'online' || result.status === 'degraded';
@@ -296,36 +416,40 @@ router.post('/:id/check', async (req, res) => {
       newUptime = (result.status === 'online' || result.status === 'degraded') ? 100 : 0;
     }
     
-    const updatedService = await prisma.service.update({
-      where: { id: service.id },
-      data: {
+    const updatedService = await db.update(serviceTable)
+      .set({
         status: result.status,
         responseTime: result.responseTime,
         lastChecked: now,
         uptime: newUptime,
         totalMonitoredTime: totalMonitoredTime,
-        onlineTime: onlineTime
-      },
-      include: {
-        logs: {
-          orderBy: { timestamp: 'desc' },
-          take: 10
-        }
-      }
-    });
+        onlineTime: onlineTime,
+        updatedAt: now
+      })
+      .where(eq(serviceTable.id, service.id))
+      .returning();
     
     // Crear log
-    await prisma.serviceLog.create({
-      data: {
-        serviceId: service.id,
-        status: result.status,
-        responseTime: result.responseTime,
-        message: result.message
-      }
+    await db.insert(serviceLogTable).values({
+      serviceId: service.id,
+      status: result.status,
+      responseTime: result.responseTime,
+      message: result.message,
+      timestamp: now
     });
     
-    res.json(updatedService);
+    // Obtener logs para la respuesta
+    const logs = await db.select().from(serviceLogTable)
+      .where(eq(serviceLogTable.serviceId, service.id))
+      .orderBy(desc(serviceLogTable.timestamp))
+      .limit(10);
+    
+    res.json({
+      ...updatedService[0],
+      logs
+    });
   } catch (error) {
+    console.error('Error verificando servicio:', error);
     res.status(500).json({ error: 'Error al verificar servicio', message: error.message });
   }
 });
@@ -333,67 +457,101 @@ router.post('/:id/check', async (req, res) => {
 // Verificar todos los servicios (manual)
 router.post('/check-all', async (req, res) => {
   try {
-    const services = await prisma.service.findMany();
+    const allServices = await db.select().from(serviceTable);
     
-    await Promise.all(
-      services.map(async (service) => {
-        const result = await checkService(service);
-        const now = new Date();
-        
-        // Calcular uptime basado en el estado actual
-        let newUptime = service.uptime || 100;
-        let totalMonitoredTime = service.totalMonitoredTime || 0;
-        let onlineTime = service.onlineTime || 0;
-        
-        const lastChecked = service.lastChecked;
-        if (lastChecked) {
-      const timeSinceLastCheck = now - new Date(lastChecked);
-      totalMonitoredTime = totalMonitoredTime + timeSinceLastCheck;
-      // Consideramos "online" tanto el estado 'online' como 'degraded' (funciona pero con problemas)
-      const wasOnlineOrDegraded = result.status === 'online' || result.status === 'degraded';
-      onlineTime = onlineTime + (wasOnlineOrDegraded ? timeSinceLastCheck : 0);
-      newUptime = totalMonitoredTime > 0 ? (onlineTime / totalMonitoredTime) * 100 : 100;
-    } else {
-      // Primera verificación - consideramos online tanto 'online' como 'degraded'
-      newUptime = (result.status === 'online' || result.status === 'degraded') ? 100 : 0;
+    for (const service of allServices) {
+      const result = await checkService(service);
+      const now = Date.now();
+      
+      // Calcular uptime basado en el estado actual
+      let newUptime = service.uptime || 100;
+      let totalMonitoredTime = service.totalMonitoredTime || 0;
+      let onlineTime = service.onlineTime || 0;
+      
+      const lastChecked = service.lastChecked;
+      if (lastChecked) {
+        const timeSinceLastCheck = now - lastChecked;
+        totalMonitoredTime = totalMonitoredTime + timeSinceLastCheck;
+        const wasOnlineOrDegraded = result.status === 'online' || result.status === 'degraded';
+        onlineTime = onlineTime + (wasOnlineOrDegraded ? timeSinceLastCheck : 0);
+        newUptime = totalMonitoredTime > 0 ? (onlineTime / totalMonitoredTime) * 100 : 100;
+      } else {
+        newUptime = (result.status === 'online' || result.status === 'degraded') ? 100 : 0;
+      }
+      
+      await db.update(serviceTable)
+        .set({
+          status: result.status,
+          responseTime: result.responseTime,
+          lastChecked: now,
+          uptime: newUptime,
+          totalMonitoredTime: totalMonitoredTime,
+          onlineTime: onlineTime,
+          updatedAt: now
+        })
+        .where(eq(serviceTable.id, service.id));
+      
+      await db.insert(serviceLogTable).values({
+        serviceId: service.id,
+        status: result.status,
+        responseTime: result.responseTime,
+        message: result.message,
+        timestamp: now
+      });
     }
-        
-        await prisma.service.update({
-          where: { id: service.id },
-          data: {
-            status: result.status,
-            responseTime: result.responseTime,
-            lastChecked: now,
-            uptime: newUptime,
-            totalMonitoredTime: totalMonitoredTime,
-            onlineTime: onlineTime
-          }
-        });
-        
-        await prisma.serviceLog.create({
-          data: {
-            serviceId: service.id,
-            status: result.status,
-            responseTime: result.responseTime,
-            message: result.message
-          }
-        });
-      })
-    );
     
     // Obtener servicios con sus logs
-    const servicesWithLogs = await prisma.service.findMany({
-      include: {
-        logs: {
-          orderBy: { timestamp: 'desc' },
-          take: 10
-        }
-      },
-      orderBy: { createdAt: 'desc' }
+    const services = await db.select({
+      id: serviceTable.id,
+      name: serviceTable.name,
+      type: serviceTable.type,
+      url: serviceTable.url,
+      host: serviceTable.host,
+      port: serviceTable.port,
+      description: serviceTable.description,
+      checkInterval: serviceTable.checkInterval,
+      isActive: serviceTable.isActive,
+      isPublic: serviceTable.isPublic,
+      status: serviceTable.status,
+      responseTime: serviceTable.responseTime,
+      uptime: serviceTable.uptime,
+      lastChecked: serviceTable.lastChecked,
+      totalMonitoredTime: serviceTable.totalMonitoredTime,
+      onlineTime: serviceTable.onlineTime,
+      createdAt: serviceTable.createdAt,
+      updatedAt: serviceTable.updatedAt,
+      logs: sql<typeof serviceLogTable>`(SELECT json_group_array(
+        json_object(
+          'id', ${serviceLogTable.id},
+          'serviceId', ${serviceLogTable.serviceId},
+          'status', ${serviceLogTable.status},
+          'responseTime', ${serviceLogTable.responseTime},
+          'message', ${serviceLogTable.message},
+          'timestamp', ${serviceLogTable.timestamp}
+        )
+      ) FROM ${serviceLogTable} WHERE ${serviceLogTable.serviceId} = ${serviceTable.id} ORDER BY ${serviceLogTable.timestamp} DESC LIMIT 10)`
+    })
+    .from(serviceTable)
+    .orderBy(desc(serviceTable.createdAt));
+    
+    const parsedServices = services.map(s => {
+      try {
+        return {
+          ...s,
+          logs: s.logs ? JSON.parse(s.logs) : []
+        };
+      } catch (error) {
+        console.error('Error parsing logs for service', s.id, ':', error);
+        return {
+          ...s,
+          logs: []
+        };
+      }
     });
     
-    res.json(servicesWithLogs);
+    res.json(parsedServices);
   } catch (error) {
+    console.error('Error verificando todos los servicios:', error);
     res.status(500).json({ error: 'Error al verificar servicios', message: error.message });
   }
 });
@@ -401,30 +559,35 @@ router.post('/check-all', async (req, res) => {
 // Toggle monitoreo activo/inactivo
 router.post('/:id/toggle', async (req, res) => {
   try {
-    const service = await prisma.service.findUnique({
-      where: { id: parseInt(req.params.id) }
-    });
+    const serviceId = parseInt(req.params.id);
     
-    if (!service) {
+    const existing = await db.select().from(serviceTable).where(eq(serviceTable.id, serviceId));
+    
+    if (existing.length === 0) {
       return res.status(404).json({ error: 'Servicio no encontrado' });
     }
     
+    const service = existing[0];
     const newIsActive = !service.isActive;
     
-    const updatedService = await prisma.service.update({
-      where: { id: service.id },
-      data: { isActive: newIsActive }
-    });
+    const updatedService = await db.update(serviceTable)
+      .set({
+        isActive: newIsActive,
+        updatedAt: Date.now()
+      })
+      .where(eq(serviceTable.id, serviceId))
+      .returning();
     
     // Iniciar o detener monitoreo
     if (newIsActive) {
-      startMonitoring(updatedService);
+      startMonitoring(updatedService[0]);
     } else {
-      stopMonitoring(updatedService.id);
+      stopMonitoring(serviceId);
     }
     
-    res.json(updatedService);
+    res.json(updatedService[0]);
   } catch (error) {
+    console.error('Error toggling servicio:', error);
     res.status(500).json({ error: 'Error al cambiar estado del servicio', message: error.message });
   }
 });
@@ -436,37 +599,33 @@ router.get('/:id/metrics', async (req, res) => {
     const { range = '24h' } = req.query;
     
     // Calcular fecha de inicio según el rango
-    const now = new Date();
+    const now = Date.now();
     let startDate;
     
     switch (range) {
       case '1h':
-        startDate = new Date(now - 60 * 60 * 1000);
+        startDate = now - 60 * 60 * 1000;
         break;
       case '24h':
-        startDate = new Date(now - 24 * 60 * 60 * 1000);
+        startDate = now - 24 * 60 * 60 * 1000;
         break;
       case '7d':
-        startDate = new Date(now - 7 * 24 * 60 * 60 * 1000);
+        startDate = now - 7 * 24 * 60 * 60 * 1000;
         break;
       case '30d':
-        startDate = new Date(now - 30 * 24 * 60 * 60 * 1000);
+        startDate = now - 30 * 24 * 60 * 60 * 1000;
         break;
       default:
-        startDate = new Date(now - 24 * 60 * 60 * 1000);
+        startDate = now - 24 * 60 * 60 * 1000;
     }
     
-    const metrics = await prisma.performanceMetric.findMany({
-      where: {
-        serviceId: serviceId,
-        timestamp: {
-          gte: startDate
-        }
-      },
-      orderBy: {
-        timestamp: 'asc'
-      }
-    });
+    const metrics = await db.select()
+      .from(performanceMetricTable)
+      .where(and(
+        eq(performanceMetricTable.serviceId, serviceId),
+        gte(performanceMetricTable.timestamp, startDate)
+      ))
+      .orderBy(asc(performanceMetricTable.timestamp));
     
     // Calcular estadísticas agregadas
     const stats = {
@@ -483,8 +642,8 @@ router.get('/:id/metrics', async (req, res) => {
     if (metrics.length > 0) {
       const responseTimes = metrics.map(m => m.responseTime).filter(rt => rt > 0);
       stats.avgResponseTime = Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length);
-      stats.minResponseTime = Math.min(...responseTimes);
-      stats.maxResponseTime = Math.max(...responseTimes);
+      stats.minResponseTime = responseTimes.length > 0 ? Math.min(...responseTimes) : 0;
+      stats.maxResponseTime = responseTimes.length > 0 ? Math.max(...responseTimes) : 0;
       
       metrics.forEach(m => {
         if (m.status === 'online') stats.onlineCount++;
@@ -498,10 +657,10 @@ router.get('/:id/metrics', async (req, res) => {
     
     res.json({
       metrics,
-      stats,
-      range
+      stats
     });
   } catch (error) {
+    console.error('Error obteniendo métricas:', error);
     res.status(500).json({ error: 'Error al obtener métricas', message: error.message });
   }
 });

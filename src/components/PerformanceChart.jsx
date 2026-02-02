@@ -24,7 +24,9 @@ function PerformanceChart({ serviceId, isCompact = false }) {
   const fetchMetrics = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/services/${serviceId}/metrics?range=${range}`);
+      const response = await fetch(`${API_URL}/services/${serviceId}/metrics?range=${range}`, {
+        credentials: 'include'
+      });
       const data = await response.json();
       setMetrics(data.metrics);
       setStats(data.stats);

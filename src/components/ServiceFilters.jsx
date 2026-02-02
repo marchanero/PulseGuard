@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Search, Filter, LayoutGrid, List, ArrowUpDown, X } from 'lucide-react';
 import ExportButton from './ExportButton';
 
@@ -66,7 +66,7 @@ function ServiceFilters({ services, onFilterChange, viewMode, onViewModeChange, 
     return result;
   }, [services, searchQuery, statusFilter, sortBy]);
 
-  useMemo(() => {
+  useEffect(() => {
     onFilterChange(filteredServices);
   }, [filteredServices, onFilterChange]);
 

@@ -1,5 +1,6 @@
 import express from 'express';
-import prisma from '../lib/prisma.js';
+import { db, services as serviceTable, serviceLogs as serviceLogTable } from '../lib/db.js';
+import { eq, desc, gte, sql, and } from 'drizzle-orm';
 
 const router = express.Router();
 
@@ -49,25 +50,25 @@ const rateLimitMiddleware = (req, res, next) => {
 // Obtener estado público de todos los servicios (sin logs detallados)
 router.get('/', rateLimitMiddleware, async (req, res) => {
   try {
-    const services = await prisma.service.findMany({
-      where: { 
-        isDeleted: false,
-        isActive: true
-      },
-      select: {
-        id: true,
-        name: true,
-        type: true,
-        url: true,
-        description: true,
-        status: true,
-        responseTime: true,
-        uptime: true,
-        lastChecked: true,
-        createdAt: true
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    const services = await db.select({
+      id: serviceTable.id,
+      name: serviceTable.name,
+      type: serviceTable.type,
+      url: serviceTable.url,
+      description: serviceTable.description,
+      status: serviceTable.status,
+      responseTime: serviceTable.responseTime,
+      uptime: serviceTable.uptime,
+      lastChecked: serviceTable.lastChecked,
+      createdAt: serviceTable.createdAt
+    })
+    .from(serviceTable)
+    .where(and(
+      eq(serviceTable.isDeleted, false),
+      eq(serviceTable.isActive, true),
+      eq(serviceTable.isPublic, true)
+    ))
+    .orderBy(desc(serviceTable.createdAt));
     
     // Calcular estadísticas generales
     const totalServices = services.length;
@@ -117,40 +118,35 @@ router.get('/', rateLimitMiddleware, async (req, res) => {
 // Obtener historial de incidentes (últimos 7 días)
 router.get('/incidents', rateLimitMiddleware, async (req, res) => {
   try {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
     
-    const logs = await prisma.serviceLog.findMany({
-      where: {
-        timestamp: {
-          gte: sevenDaysAgo
-        },
-        status: {
-          in: ['offline', 'error']
-        }
-      },
-      include: {
-        service: {
-          select: {
-            name: true,
-            url: true
-          }
-        }
-      },
-      orderBy: {
-        timestamp: 'desc'
-      },
-      take: 50
-    });
+    const logs = await db.select({
+      id: serviceLogTable.id,
+      serviceId: serviceLogTable.serviceId,
+      timestamp: serviceLogTable.timestamp,
+      status: serviceLogTable.status,
+      message: serviceLogTable.message,
+      serviceName: serviceTable.name,
+      serviceUrl: serviceTable.url
+    })
+    .from(serviceLogTable)
+    .innerJoin(serviceTable, eq(serviceLogTable.serviceId, serviceTable.id))
+    .where(and(
+      gte(serviceLogTable.timestamp, sevenDaysAgo),
+      sql`${serviceLogTable.status} IN ('offline', 'error')`,
+      eq(serviceTable.isPublic, true)
+    ))
+    .orderBy(desc(serviceLogTable.timestamp))
+    .limit(50);
     
     // Agrupar por día
     const incidentsByDay = logs.reduce((acc, log) => {
-      const date = log.timestamp.toISOString().split('T')[0];
+      const date = new Date(log.timestamp).toISOString().split('T')[0];
       if (!acc[date]) {
         acc[date] = [];
       }
       acc[date].push({
-        service: log.service.name,
+        service: log.serviceName,
         status: log.status,
         message: log.message,
         timestamp: log.timestamp

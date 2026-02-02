@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Activity, Clock, Globe, Trash2, RefreshCw, BarChart3, FileText, MoreHorizontal, Zap, Shield, AlertTriangle } from 'lucide-react';
+import { Activity, Clock, Globe, Trash2, RefreshCw, BarChart3, FileText, MoreHorizontal, Zap, Shield, AlertTriangle, Lock, Unlock } from 'lucide-react';
 import ServiceCharts from './ServiceCharts';
 import { Tooltip } from './ui';
 
-function ServiceCard({ service, onDelete, onCheck, onViewDetails, isCompact }) {
+function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic, isCompact }) {
   const [showLogs, setShowLogs] = useState(false);
   const [showCharts, setShowCharts] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
@@ -129,6 +129,17 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, isCompact }) {
             </div>
             <div className="flex items-center gap-1">
               <button
+                onClick={() => onTogglePublic && onTogglePublic(service.id, !service.isPublic)}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  service.isPublic 
+                    ? 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20' 
+                    : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                }`}
+                title={service.isPublic ? 'Público - Click para hacer privado' : 'Privado - Click para hacer público'}
+              >
+                {service.isPublic ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+              </button>
+              <button
                 onClick={handleCheck}
                 disabled={isChecking || !service.isActive}
                 className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
@@ -149,9 +160,19 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, isCompact }) {
           </div>
 
           {/* Service Info */}
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-1 truncate">
-            {service.name}
-          </h3>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white truncate">
+              {service.name}
+            </h3>
+            <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-medium rounded-full flex-shrink-0 ${
+              service.isPublic 
+                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' 
+                : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+            }`}>
+              {service.isPublic ? <Unlock className="w-2.5 h-2.5" /> : <Lock className="w-2.5 h-2.5" />}
+              {service.isPublic ? 'Público' : 'Privado'}
+            </span>
+          </div>
           <a 
             href={service.url} 
             target="_blank" 
@@ -230,6 +251,18 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, isCompact }) {
                 Pausado
               </span>
             )}
+            <Tooltip content={service.isPublic ? 'Público - Click para hacer privado' : 'Privado - Click para hacer público'} position="left">
+              <button
+                onClick={() => onTogglePublic && onTogglePublic(service.id, !service.isPublic)}
+                className={`p-2 rounded-lg transition-all duration-200 ${
+                  service.isPublic 
+                    ? 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20' 
+                    : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                }`}
+              >
+                {service.isPublic ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+              </button>
+            </Tooltip>
             <Tooltip content="Eliminar servicio" position="left">
               <button
                 onClick={() => onDelete(service.id, service.name)}
@@ -243,9 +276,19 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, isCompact }) {
 
         {/* Service Info */}
         <div className="mb-5">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
-            {service.name}
-          </h3>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              {service.name}
+            </h3>
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full ${
+              service.isPublic 
+                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' 
+                : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+            }`}>
+              {service.isPublic ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+              {service.isPublic ? 'Público' : 'Privado'}
+            </span>
+          </div>
           <a 
             href={service.url} 
             target="_blank" 

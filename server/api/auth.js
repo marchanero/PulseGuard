@@ -2,12 +2,13 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import session from 'express-session';
 import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
+import { db } from '../lib/db.js';
+import { users } from '../lib/schema.js';
+import { eq, or } from 'drizzle-orm';
 
 dotenv.config();
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Middleware de sesión
 export const sessionMiddleware = session({
@@ -17,8 +18,10 @@ export const sessionMiddleware = session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 horas
-  }
+    maxAge: 24 * 60 * 60 * 1000, // 24 horas
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
+  },
+  name: 'pulseguard.sid'
 });
 
 // Middleware para verificar autenticación
@@ -45,17 +48,15 @@ router.post('/register', async (req, res) => {
     }
 
     // Verificar si el usuario ya existe
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { username },
-          { email },
-          { alias }
-        ]
-      }
-    });
+    const existingUser = await db.select().from(users).where(
+      or(
+        eq(users.username, username),
+        eq(users.email, email),
+        eq(users.alias, alias)
+      )
+    ).limit(1);
 
-    if (existingUser) {
+    if (existingUser.length > 0) {
       return res.status(400).json({ error: 'El usuario, email o alias ya está registrado' });
     }
 
@@ -63,30 +64,27 @@ router.post('/register', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
 
     // Crear usuario
-    const user = await prisma.user.create({
-      data: {
-        username,
-        email,
-        alias,
-        passwordHash
-      },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        alias: true,
-        createdAt: true
-      }
+    const newUser = await db.insert(users).values({
+      username,
+      email,
+      alias,
+      passwordHash
+    }).returning({
+      id: users.id,
+      username: users.username,
+      email: users.email,
+      alias: users.alias,
+      createdAt: users.createdAt
     });
 
     res.status(201).json({ 
       success: true, 
       message: 'Usuario registrado correctamente',
-      user 
+      user: newUser[0]
     });
   } catch (error) {
     console.error('Error en registro:', error);
-    res.status(500).json({ error: 'Error al registrar usuario' });
+    res.status(500).json({ error: 'Error al registrar usuario', details: error.message });
   }
 });
 
@@ -100,20 +98,18 @@ router.post('/login', async (req, res) => {
     }
     
     // Buscar usuario por username o email
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { username },
-          { email: username }
-        ]
-      }
-    });
+    const user = await db.select().from(users).where(
+      or(
+        eq(users.username, username),
+        eq(users.email, username)
+      )
+    ).limit(1);
     
-    if (!user) {
+    if (user.length === 0) {
       return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
     }
     
-    const isValid = await bcrypt.compare(password, user.passwordHash);
+    const isValid = await bcrypt.compare(password, user[0].passwordHash);
     
     if (!isValid) {
       return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
@@ -121,18 +117,18 @@ router.post('/login', async (req, res) => {
     
     // Crear sesión
     req.session.isAuthenticated = true;
-    req.session.userId = user.id;
-    req.session.username = user.username;
+    req.session.userId = user[0].id;
+    req.session.username = user[0].username;
     req.session.loginTime = new Date().toISOString();
     
     res.json({ 
       success: true, 
       message: 'Autenticación exitosa',
       user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        alias: user.alias
+        id: user[0].id,
+        username: user[0].username,
+        email: user[0].email,
+        alias: user[0].alias
       }
     });
   } catch (error) {
@@ -159,22 +155,19 @@ router.get('/check', (req, res) => {
 // Obtener datos del usuario
 router.get('/me', requireAuth, async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.session.userId },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        alias: true,
-        createdAt: true
-      }
-    });
+    const user = await db.select({
+      id: users.id,
+      username: users.username,
+      email: users.email,
+      alias: users.alias,
+      createdAt: users.createdAt
+    }).from(users).where(eq(users.id, req.session.userId)).limit(1);
     
-    if (!user) {
+    if (user.length === 0) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
     
-    res.json({ user });
+    res.json({ user: user[0] });
   } catch (error) {
     console.error('Error al obtener usuario:', error);
     res.status(500).json({ error: 'Error al obtener datos del usuario' });

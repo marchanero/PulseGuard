@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Globe, Clock, FileText, Check, AlertCircle, Server, Shield, Network, Activity } from 'lucide-react';
+import { Plus, Globe, Clock, FileText, Check, AlertCircle, Server, Shield, Network, Activity, Eye, EyeOff } from 'lucide-react';
 
 function ServiceForm({ onSubmit }) {
   const [formData, setFormData] = useState({
@@ -10,7 +10,8 @@ function ServiceForm({ onSubmit }) {
     port: '',
     description: '',
     checkInterval: 60,
-    isActive: true
+    isActive: true,
+    isPublic: false
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -86,6 +87,7 @@ function ServiceForm({ onSubmit }) {
           type: formData.type,
           checkInterval: formData.checkInterval,
           isActive: formData.isActive,
+          isPublic: formData.isPublic,
           description: formData.description
         };
         
@@ -111,7 +113,8 @@ function ServiceForm({ onSubmit }) {
           port: '',
           description: '', 
           checkInterval: 60, 
-          isActive: true 
+          isActive: true,
+          isPublic: false
         });
         setErrors({});
       } catch (error) {
@@ -456,6 +459,60 @@ function ServiceForm({ onSubmit }) {
               </span>
             </label>
           </div>
+        </div>
+
+        {/* Visibility */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
+            Visibilidad
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className={`flex items-center gap-2 p-2.5 border rounded-lg cursor-pointer transition-colors ${
+              !formData.isPublic
+                ? 'border-slate-900 dark:border-white bg-slate-50 dark:bg-gray-700'
+                : 'border-slate-200 dark:border-gray-600 hover:border-slate-300 dark:hover:border-gray-500'
+            }`}>
+              <input
+                type="radio"
+                name="isPublic"
+                value="false"
+                checked={!formData.isPublic}
+                onChange={() => setFormData(prev => ({ ...prev, isPublic: false }))}
+                className="w-4 h-4 text-slate-900 border-slate-300 focus:ring-slate-900"
+              />
+              <div className="flex items-center gap-2">
+                <EyeOff className="w-4 h-4 text-slate-600 dark:text-gray-400" />
+                <span className="text-sm text-slate-700 dark:text-gray-300">
+                  Privado
+                </span>
+              </div>
+            </label>
+            <label className={`flex items-center gap-2 p-2.5 border rounded-lg cursor-pointer transition-colors ${
+              formData.isPublic
+                ? 'border-slate-900 dark:border-white bg-slate-50 dark:bg-gray-700'
+                : 'border-slate-200 dark:border-gray-600 hover:border-slate-300 dark:hover:border-gray-500'
+              }`}>
+              <input
+                type="radio"
+                name="isPublic"
+                value="true"
+                checked={formData.isPublic}
+                onChange={() => setFormData(prev => ({ ...prev, isPublic: true }))}
+                className="w-4 h-4 text-slate-900 border-slate-300 focus:ring-slate-900"
+              />
+              <div className="flex items-center gap-2">
+                <Eye className="w-4 h-4 text-slate-600 dark:text-gray-400" />
+                <span className="text-sm text-slate-700 dark:text-gray-300">
+                  Público
+                </span>
+              </div>
+            </label>
+          </div>
+          <p className="mt-1 text-xs text-slate-500 dark:text-gray-400">
+            {formData.isPublic 
+              ? 'Los servicios públicos son visibles en la página de estado (/status) sin necesidad de login'
+              : 'Los servicios privados solo son visibles para usuarios autenticados'}
+          </p>
         </div>
 
         {/* Description */}

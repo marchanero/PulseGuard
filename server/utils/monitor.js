@@ -1,5 +1,6 @@
-import prisma from '../lib/prisma.js';
+import { db, services, serviceLogs, performanceMetrics } from '../lib/db.js';
 import { checkService } from './checkTypes.js';
+import { eq, and } from 'drizzle-orm';
 
 // Mapa para almacenar los intervalos activos
 const activeIntervals = new Map();
@@ -7,9 +8,8 @@ const activeIntervals = new Map();
 // Función para verificar un servicio y actualizar su estado
 async function monitorService(serviceId) {
   try {
-    const service = await prisma.service.findUnique({
-      where: { id: serviceId }
-    });
+    const serviceResult = await db.select().from(services).where(eq(services.id, serviceId)).limit(1);
+    const service = serviceResult[0];
 
     if (!service || !service.isActive) {
       // Si el servicio no existe o está inactivo, detener el monitoreo
@@ -21,68 +21,65 @@ async function monitorService(serviceId) {
 
     // Calcular uptime basado en el estado actual
     let newUptime = service.uptime || 100;
-    const now = new Date();
+    const now = new Date().toISOString();
     const lastChecked = service.lastChecked;
     
     // Solo recalcular uptime si hay un check previo
     if (lastChecked) {
-      const timeSinceLastCheck = now - new Date(lastChecked);
+      const lastCheckedDate = new Date(lastChecked);
+      const nowDate = new Date();
+      const timeSinceLastCheck = nowDate - lastCheckedDate;
       
       // Actualizar tiempo total monitoreado
       const totalMonitoredTime = (service.totalMonitoredTime || 0) + timeSinceLastCheck;
       
       // Calcular uptime: tiempo online/degradado / tiempo total monitoreado
-      // Consideramos "online" tanto el estado 'online' como 'degraded' (funciona pero con problemas)
       const wasOnlineOrDegraded = result.status === 'online' || result.status === 'degraded';
       const onlineTime = (service.onlineTime || 0) + (wasOnlineOrDegraded ? timeSinceLastCheck : 0);
       
       newUptime = totalMonitoredTime > 0 ? (onlineTime / totalMonitoredTime) * 100 : 100;
       
       // Actualizar el servicio con los nuevos datos y métricas de uptime
-      await prisma.service.update({
-        where: { id: serviceId },
-        data: {
+      await db.update(services)
+        .set({
           status: result.status,
           responseTime: result.responseTime,
           lastChecked: now,
           uptime: newUptime,
           totalMonitoredTime: totalMonitoredTime,
           onlineTime: onlineTime
-        }
-      });
+        })
+        .where(eq(services.id, serviceId));
     } else {
       // Primera verificación - inicializar uptime
-      await prisma.service.update({
-        where: { id: serviceId },
-        data: {
+      await db.update(services)
+        .set({
           status: result.status,
           responseTime: result.responseTime,
           lastChecked: now,
           uptime: result.status === 'online' ? 100 : 0,
           totalMonitoredTime: 0,
           onlineTime: result.status === 'online' ? 0 : 0
-        }
-      });
+        })
+        .where(eq(services.id, serviceId));
     }
 
     // Crear log
-    await prisma.serviceLog.create({
-      data: {
-        serviceId: serviceId,
-        status: result.status,
-        responseTime: result.responseTime,
-        message: result.message
-      }
+    await db.insert(serviceLogs).values({
+      serviceId: serviceId,
+      status: result.status,
+      responseTime: result.responseTime,
+      message: result.message,
+      timestamp: now
     });
 
     // Guardar métrica de rendimiento para análisis histórico
-    await prisma.performanceMetric.create({
-      data: {
-        serviceId: serviceId,
-        responseTime: result.responseTime,
-        status: result.status,
-        uptime: newUptime
-      }
+    await db.insert(performanceMetrics).values({
+      serviceId: serviceId,
+      responseTime: result.responseTime,
+      status: result.status,
+      uptime: newUptime,
+      timestamp: now
     });
 
     console.log(`[Monitor] Servicio ${service.name} verificado: ${result.status} (${result.responseTime}ms)`);
@@ -140,13 +137,15 @@ export function stopAllMonitoring() {
 // Iniciar monitoreo de todos los servicios activos
 export async function startAllMonitoring() {
   try {
-    const services = await prisma.service.findMany({
-      where: { isActive: true }
-    });
+    const servicesResult = await db.select().from(services).where(eq(services.isActive, true));
+    const servicesList = servicesResult.map(s => ({
+      ...s,
+      isActive: Boolean(s.isActive)
+    }));
 
-    console.log(`[Monitor] Iniciando monitoreo de ${services.length} servicios`);
+    console.log(`[Monitor] Iniciando monitoreo de ${servicesList.length} servicios`);
 
-    for (const service of services) {
+    for (const service of servicesList) {
       startMonitoring(service);
     }
   } catch (error) {

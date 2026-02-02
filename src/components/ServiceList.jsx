@@ -1,6 +1,6 @@
 import ServiceCard from './ServiceCard';
 
-function ServiceList({ services, onDelete, onCheck, onViewDetails, isCompact }) {
+function ServiceList({ services, onDelete, onCheck, onTogglePublic, onViewDetails, isCompact }) {
   if (services.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4">
@@ -37,6 +37,7 @@ function ServiceList({ services, onDelete, onCheck, onViewDetails, isCompact }) 
             service={service}
             onDelete={onDelete}
             onCheck={onCheck}
+            onTogglePublic={onTogglePublic}
             onViewDetails={onViewDetails}
             isCompact={isCompact}
           />
