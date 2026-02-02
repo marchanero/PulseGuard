@@ -1,37 +1,26 @@
 name: Deploy to Fly.io
 
 on:
-  workflow_run:
-    workflows: ["Tests"]
+  push:
     branches: [main]
-    types:
-      - completed
-
-env:
-  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+  workflow_dispatch:
 
 jobs:
   deploy:
     name: Deploy app
     runs-on: ubuntu-latest
-    # Solo ejecutar si los tests pasaron
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Setup Fly.io CLI
+      - name: Install Flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
+        with:
+          flyctl-version: latest
 
-      - name: Deploy to Fly.io
+      - name: Login to Fly
+        run: flyctl auth login --access-token ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Deploy to Fly
         run: flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
