@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, Globe, Clock, FileText, Check, AlertCircle, Server, Shield, Network, Activity, Eye, EyeOff, Tag } from 'lucide-react';
 import ServiceTags from './ServiceTags';
+import HeadersEditor from './HeadersEditor';
 
 function ServiceForm({ onSubmit }) {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ function ServiceForm({ onSubmit }) {
     port: '',
     description: '',
     tags: [],
+    headers: {},
     checkInterval: 60,
     isActive: true,
     isPublic: false
@@ -96,6 +98,10 @@ function ServiceForm({ onSubmit }) {
         
         if (formData.type === 'HTTP' || formData.type === 'HTTPS') {
           submitData.url = formData.url;
+          // Incluir headers solo si hay alguno definido
+          if (formData.headers && Object.keys(formData.headers).length > 0) {
+            submitData.headers = formData.headers;
+          }
         } else {
           submitData.url = formData.host;
           submitData.host = formData.host;
@@ -541,6 +547,16 @@ function ServiceForm({ onSubmit }) {
             )}
           </div>
         </div>
+
+        {/* Custom Headers - Solo para HTTP/HTTPS */}
+        {(formData.type === 'HTTP' || formData.type === 'HTTPS') && (
+          <div className="p-4 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg">
+            <HeadersEditor 
+              headers={formData.headers}
+              onChange={(headers) => setFormData(prev => ({ ...prev, headers }))}
+            />
+          </div>
+        )}
 
         {/* Description */}
         <div>
