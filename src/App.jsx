@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import ServiceList from './components/ServiceList';
 import ServiceListView from './components/ServiceListView';
 import ServiceForm from './components/ServiceForm';
@@ -13,6 +13,7 @@ import { StatusPage } from './components/StatusPage.jsx';
 import StatisticsPage from './components/StatisticsPage.jsx';
 import HistoryPage from './components/HistoryPage.jsx';
 import ServiceDetailsPage from './components/ServiceDetailsPage.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { useAuth } from './hooks/useAuth.js';
 import EmptyState from './components/EmptyState';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
@@ -59,8 +60,8 @@ function App() {
     }
   }, [isAuthenticated]);
 
-  // Keyboard shortcuts
-  useKeyboardShortcuts([
+  // Keyboard shortcuts - memoizado
+  const shortcuts = useMemo(() => [
     { key: 'n', ctrl: true, handler: () => setShowForm(true) },
     { key: 'k', ctrl: true, handler: () => setShowCommandPalette(true) },
     { key: '/', handler: () => {
@@ -81,9 +82,11 @@ function App() {
     { key: 'r', handler: () => fetchServices() },
     { key: 'c', handler: () => toggleCompact() },
     { key: '?', handler: () => setShowShortcutsHelp(true) },
-  ]);
+  ], [toggleCompact]);
 
-  const fetchServices = async () => {
+  useKeyboardShortcuts(shortcuts);
+
+  const fetchServices = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_URL}/services`, {
@@ -105,9 +108,9 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const handleAddService = async (serviceData) => {
+  const handleAddService = useCallback(async (serviceData) => {
     try {
       console.log('Enviando datos:', serviceData);
       const response = await fetch(`${API_URL}/services`, {
@@ -132,9 +135,9 @@ function App() {
       console.error('Error adding service:', error);
       toast.error('Error al añadir el servicio');
     }
-  };
+  }, [fetchServices, toast]);
 
-  const handleDeleteService = async (id, serviceName) => {
+  const handleDeleteService = useCallback(async (id, serviceName) => {
     const confirmed = await confirm({
       title: 'Eliminar servicio',
       message: `¿Estás seguro de que quieres eliminar "${serviceName}"? Esta acción no se puede deshacer.`,
@@ -159,9 +162,9 @@ function App() {
       console.error('Error deleting service:', error);
       toast.error('Error al eliminar el servicio');
     }
-  };
+  }, [confirm, fetchServices, toast]);
 
-  const handleCheckService = async (id) => {
+  const handleCheckService = useCallback(async (id) => {
     try {
       const response = await fetch(`${API_URL}/services/${id}/check`, {
         method: 'POST',
@@ -176,9 +179,9 @@ function App() {
       console.error('Error checking service:', error);
       toast.error('Error al verificar el servicio');
     }
-  };
+  }, [fetchServices, toast]);
 
-  const handleTogglePublic = async (id, isPublic) => {
+  const handleTogglePublic = useCallback(async (id, isPublic) => {
     try {
       const response = await fetch(`${API_URL}/services/${id}`, {
         method: 'PUT',
@@ -197,9 +200,9 @@ function App() {
       console.error('Error toggling public:', error);
       toast.error('Error al cambiar el estado del servicio');
     }
-  };
+  }, [fetchServices, toast]);
 
-  const handleCheckAll = async () => {
+  const handleCheckAll = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/services/check-all`, {
         method: 'POST',
@@ -214,36 +217,49 @@ function App() {
       console.error('Error checking all services:', error);
       toast.error('Error al verificar los servicios');
     }
-  };
+  }, [fetchServices, toast]);
 
-  const handleSelectServiceFromPalette = (service) => {
+  const handleSelectServiceFromPalette = useCallback((service) => {
     setSelectedService(service);
     setDrawerTab('details');
     setIsDrawerOpen(true);
-  };
+  }, []);
 
-  const handleViewStatistics = (service) => {
+  const handleViewStatistics = useCallback((service) => {
     setSelectedService(service);
     setDrawerTab('statistics');
     setIsDrawerOpen(true);
-  };
+  }, []);
 
-  const handleViewHistory = (service) => {
+  const handleViewHistory = useCallback((service) => {
     setSelectedService(service);
     setDrawerTab('history');
     setIsDrawerOpen(true);
-  };
+  }, []);
 
-  const handleViewDetails = (service) => {
+  const handleViewDetails = useCallback((service) => {
     setSelectedService(service);
     setDrawerTab('details');
     setIsDrawerOpen(true);
-  };
+  }, []);
 
-  const handleBackToDashboard = () => {
+  const handleBackToDashboard = useCallback(() => {
     setCurrentPage('dashboard');
     setSelectedServiceForPage(null);
-  };
+  }, []);
+
+  const handleCloseDrawer = useCallback(() => {
+    setIsDrawerOpen(false);
+    setSelectedService(null);
+  }, []);
+
+  const handleToggleView = useCallback(() => {
+    setViewMode(prev => prev === 'grid' ? 'list' : 'grid');
+  }, []);
+
+  const handleToggleFilters = useCallback(() => {
+    setShowFilters(prev => !prev);
+  }, []);
 
   // Mostrar página de status pública
   if (isStatusPage) {
@@ -380,10 +396,7 @@ function App() {
                   service={selectedService}
                   isOpen={isDrawerOpen}
                   initialTab={drawerTab}
-                  onClose={() => {
-                    setIsDrawerOpen(false);
-                    setSelectedService(null);
-                  }}
+                  onClose={handleCloseDrawer}
                 />
               </div>
             )}
@@ -416,8 +429,8 @@ function App() {
         services={services}
         onSelectService={handleSelectServiceFromPalette}
         onAddService={() => setShowForm(true)}
-        onToggleView={() => setViewMode(prev => prev === 'grid' ? 'list' : 'grid')}
-        onToggleFilters={() => setShowFilters(!showFilters)}
+        onToggleView={handleToggleView}
+        onToggleFilters={handleToggleFilters}
         onRefresh={fetchServices}
         viewMode={viewMode}
         showFilters={showFilters}

@@ -116,8 +116,41 @@
 - ✅ Completado: **Métricas** - Uptime tracking y métricas de rendimiento
 - ✅ Completado: **Status Pública & Incidentes** - Páginas de estado y gestión de incidentes
 - ✅ Completado: **Estilo Uptime Kuma** - HeartbeatBar, PingChart, SSL, Tags, Grupos, Notificaciones
+- ✅ Completado: **Mejoras de Código** - Refactorización y optimización (ver abajo)
 - 🔄 Próximas mejoras a implementar:
   1. Notificaciones por email/Webhooks
+  2. Docker para despliegue
+  3. Checks desde múltiples ubicaciones
+  4. Integración con GitHub
+
+---
+
+## Mejoras de Código Implementadas
+
+### Utilidades Compartidas
+- `src/utils/formatters.js` - Funciones de formateo (fechas, tiempo, bytes)
+- `src/utils/statusConfig.js` - Configuración centralizada de estados
+
+### Hooks Personalizados
+- `src/hooks/useServiceLogs.js` - Hook para cargar logs de servicio con auto-refresh
+
+### Componentes Optimizados
+- `src/components/ErrorBoundary.jsx` - Captura errores de React
+- `src/components/ServiceCardRefactored.jsx` - ServiceCard dividido en subcomponentes:
+  - `StatusIndicator` - Indicador de estado
+  - `StatusBadge` - Badge de estado
+  - `VisibilityBadge` - Badge público/privado
+  - `ActionButton` - Botón de acción reutilizable
+  - `MetricsGrid` - Grid de métricas
+  - `ServiceHeader` - Encabezado de tarjeta
+  - `CompactServiceCard` - Tarjeta compacta
+  - `NormalServiceCard` - Tarjeta normal
+
+### Optimizaciones de Rendimiento
+- Memoización con `memo()` en subcomponentes
+- `useCallback` para handlers en App.jsx
+- `useMemo` para datos derivados
+- Error Boundary global en main.jsx
   2. Docker para despliegue
   3. Checks desde múltiples ubicaciones
   4. Integración con GitHub
