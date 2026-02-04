@@ -103,17 +103,17 @@ export const notificationHistory = sqliteTable('NotificationHistory', {
 // ===== MAINTENANCE WINDOWS =====
 
 // Maintenance windows to suppress alerts during planned maintenance
-export const maintenanceWindows = sqliteTable('MaintenanceWindow', {
+export const maintenanceWindows = sqliteTable('maintenance_windows', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  serviceId: integer('serviceId').references(() => services.id, { onDelete: 'cascade' }),
+  serviceId: integer('service_id').references(() => services.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   description: text('description'),
-  startTime: text('startTime').notNull(),
-  endTime: text('endTime').notNull(),
-  isRecurring: integer('isRecurring', { mode: 'boolean' }).default(false),
-  recurringPattern: text('recurringPattern'), // JSON: { type: 'daily|weekly|monthly', interval: 1, daysOfWeek: [] }
-  isActive: integer('isActive', { mode: 'boolean' }).default(true),
-  createdBy: text('createdBy'),
-  createdAt: text('createdAt').default(sql`strftime('%Y-%m-%dT%H:%M:%S', 'now')`),
-  updatedAt: text('updatedAt').default(sql`strftime('%Y-%m-%dT%H:%M:%S', 'now')`)
+  startTime: text('start_time').notNull(),
+  endTime: text('end_time').notNull(),
+  isRecurring: integer('is_recurring', { mode: 'boolean' }).default(false),
+  recurringPattern: text('recurring_pattern'), // JSON: { type: 'daily|weekly|monthly', interval: 1, daysOfWeek: [] }
+  isActive: integer('is_active', { mode: 'boolean' }).default(true),
+  createdBy: text('created_by'),
+  createdAt: text('created_at').default(sql`strftime('%Y-%m-%dT%H:%M:%S', 'now')`),
+  updatedAt: text('updated_at').default(sql`strftime('%Y-%m-%dT%H:%M:%S', 'now')`)
 });
