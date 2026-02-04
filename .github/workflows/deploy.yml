@@ -42,12 +42,16 @@ jobs:
 
       - name: Install Flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
-        with:
-          flyctl-version: latest
+
+      - name: Set Fly.io secrets
+        run: |
+          flyctl secrets set SESSION_SECRET="${{ secrets.SESSION_SECRET }}" --app pulseguard-fragrant-paper-4573
+          flyctl secrets set TURSO_DATABASE_URL="${{ secrets.TURSO_DATABASE_URL }}" --app pulseguard-fragrant-paper-4573
+          flyctl secrets set TURSO_AUTH_TOKEN="${{ secrets.TURSO_AUTH_TOKEN }}" --app pulseguard-fragrant-paper-4573
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
       - name: Deploy to Fly
-        run: |
-          flyctl apps create pulseguard-fragrant-paper-4573 --org personal -y 2>/dev/null || true
-          flyctl deploy --remote-only
+        run: flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
