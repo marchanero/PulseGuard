@@ -298,9 +298,9 @@ router.get('/:id', async (req, res) => {
 // Crear un nuevo servicio
 router.post('/', async (req, res) => {
   try {
-    const { name, type, url, host, port, description, checkInterval, isActive, isPublic, tags, headers } = req.body;
+    const { name, type, url, host, port, description, checkInterval, isActive, isPublic, tags, headers, contentMatch } = req.body;
     
-    console.log('Creando servicio:', { name, type, url, host, port, tags, headers });
+    console.log('Creando servicio:', { name, type, url, host, port, tags, headers, contentMatch });
     
     if (!name) {
       return res.status(400).json({ error: 'El nombre es requerido' });
@@ -342,6 +342,7 @@ router.post('/', async (req, res) => {
       description: description || '',
       tags: tagsJson,
       headers: headersJson,
+      contentMatch: contentMatch || null,
       checkInterval: interval,
       isActive: isActive !== undefined ? isActive : true,
       isPublic: isPublic !== undefined ? isPublic : false,

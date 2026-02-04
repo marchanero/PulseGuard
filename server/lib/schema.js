@@ -34,6 +34,7 @@ export const services = sqliteTable('Service', {
   createdAt: text('createdAt').default(sql`strftime('%Y-%m-%dT%H:%M:%S', 'now')`),
   updatedAt: text('updatedAt').default(sql`strftime('%Y-%m-%dT%H:%M:%S', 'now')`),
   contentMatch: text('contentMatch'),
+  lastContentMatch: integer('lastContentMatch', { mode: 'boolean' }),
   sslExpiryDate: text('sslExpiryDate'),
   sslDaysRemaining: integer('sslDaysRemaining'),
   dbType: text('dbType'),
@@ -47,7 +48,8 @@ export const serviceLogs = sqliteTable('ServiceLog', {
   timestamp: text('timestamp').default(sql`strftime('%Y-%m-%dT%H:%M:%S', 'now')`),
   status: text('status').notNull(),
   responseTime: integer('responseTime'),
-  message: text('message')
+  message: text('message'),
+  contentMatchStatus: integer('contentMatchStatus', { mode: 'boolean' })
 });
 
 export const performanceMetrics = sqliteTable('PerformanceMetric', {

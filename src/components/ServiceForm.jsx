@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, Globe, Clock, FileText, Check, AlertCircle, Server, Shield, Network, Activity, Eye, EyeOff, Tag } from 'lucide-react';
 import ServiceTags from './ServiceTags';
+import ContentMatchEditor from './ContentMatchEditor';
 import HeadersEditor from './HeadersEditor';
 
 function ServiceForm({ onSubmit }) {
@@ -12,6 +13,7 @@ function ServiceForm({ onSubmit }) {
     port: '',
     description: '',
     tags: [],
+    contentMatch: '',
     headers: {},
     checkInterval: 60,
     isActive: true,
@@ -98,6 +100,10 @@ function ServiceForm({ onSubmit }) {
         
         if (formData.type === 'HTTP' || formData.type === 'HTTPS') {
           submitData.url = formData.url;
+          // Agregar contentMatch solo si está configurado
+          if (formData.contentMatch && formData.contentMatch.trim()) {
+            submitData.contentMatch = formData.contentMatch.trim();
+          }
           // Incluir headers solo si hay alguno definido
           if (formData.headers && Object.keys(formData.headers).length > 0) {
             submitData.headers = formData.headers;
@@ -122,6 +128,7 @@ function ServiceForm({ onSubmit }) {
           port: '',
           description: '',
           tags: [],
+          contentMatch: '',
           checkInterval: 60, 
           isActive: true,
           isPublic: false
@@ -547,6 +554,16 @@ function ServiceForm({ onSubmit }) {
             )}
           </div>
         </div>
+
+        {/* Content Validation - Solo para HTTP/HTTPS */}
+        {(formData.type === 'HTTP' || formData.type === 'HTTPS') && (
+          <div className="p-4 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg">
+            <ContentMatchEditor 
+              contentMatch={formData.contentMatch}
+              onChange={(contentMatch) => setFormData(prev => ({ ...prev, contentMatch }))}
+            />
+          </div>
+        )}
 
         {/* Custom Headers - Solo para HTTP/HTTPS */}
         {(formData.type === 'HTTP' || formData.type === 'HTTPS') && (

@@ -8,7 +8,7 @@ import process from 'process';
 const execAsync = promisify(exec);
 
 // Check HTTP/HTTPS endpoint
-export async function checkHttp(url, customHeaders = {}) {
+export async function checkHttp(url, customHeaders = {}, contentMatch = null) {
   const startTime = Date.now();
   
   try {
@@ -21,8 +21,11 @@ export async function checkHttp(url, customHeaders = {}) {
       ...customHeaders // Los headers personalizados pueden sobrescribir los defaults
     };
     
+    // Si necesitamos validar contenido, usar GET en lugar de HEAD
+    const method = contentMatch ? 'GET' : 'HEAD';
+    
     const response = await fetch(url, {
-      method: 'HEAD',
+      method,
       signal: controller.signal,
       headers
     });
@@ -30,26 +33,69 @@ export async function checkHttp(url, customHeaders = {}) {
     clearTimeout(timeout);
     const responseTime = Date.now() - startTime;
     
+    // Verificar contenido si está configurado
+    let contentValidation = { matched: true, message: null };
+    if (contentMatch && response.ok) {
+      try {
+        const body = await response.text();
+        const pattern = contentMatch.trim();
+        
+        // Detectar si es regex (entre /.../)
+        let isMatch = false;
+        if (pattern.startsWith('/') && pattern.lastIndexOf('/') > 0) {
+          const regexStr = pattern.slice(1, pattern.lastIndexOf('/'));
+          const flags = pattern.slice(pattern.lastIndexOf('/') + 1);
+          const regex = new RegExp(regexStr, flags || 'i');
+          isMatch = regex.test(body);
+        } else {
+          // Búsqueda de texto simple (case-insensitive)
+          isMatch = body.toLowerCase().includes(pattern.toLowerCase());
+        }
+        
+        contentValidation.matched = isMatch;
+        if (!isMatch) {
+          contentValidation.message = `Content validation failed: "${pattern}" not found in response`;
+        }
+      } catch (error) {
+        contentValidation.matched = false;
+        contentValidation.message = `Content validation error: ${error.message}`;
+      }
+    }
+    
+    // Determinar estado final
+    if (!contentValidation.matched) {
+      return {
+        status: 'degraded',
+        responseTime,
+        message: contentValidation.message || 'Content mismatch',
+        statusCode: response.status,
+        contentMatch: false
+      };
+    }
+    
     if (response.ok) {
       return {
         status: 'online',
         responseTime,
-        message: `HTTP ${response.status} - OK`,
-        statusCode: response.status
+        message: `HTTP ${response.status} - OK${contentMatch ? ' (content verified)' : ''}`,
+        statusCode: response.status,
+        contentMatch: contentValidation.matched
       };
     } else if (response.status >= 500) {
       return {
         status: 'offline',
         responseTime,
         message: `HTTP ${response.status} - Server Error`,
-        statusCode: response.status
+        statusCode: response.status,
+        contentMatch: false
       };
     } else {
       return {
         status: 'degraded',
         responseTime,
         message: `HTTP ${response.status} - ${response.statusText}`,
-        statusCode: response.status
+        statusCode: response.status,
+        contentMatch: false
       };
     }
   } catch (error) {
@@ -60,7 +106,8 @@ export async function checkHttp(url, customHeaders = {}) {
         status: 'timeout',
         responseTime: 30000,
         message: 'Timeout - No response in 30s',
-        statusCode: null
+        statusCode: null,
+        contentMatch: false
       };
     }
     
@@ -68,7 +115,8 @@ export async function checkHttp(url, customHeaders = {}) {
       status: 'offline',
       responseTime,
       message: `Error: ${error.message}`,
-      statusCode: null
+      statusCode: null,
+      contentMatch: false
     };
   }
 }
@@ -346,7 +394,7 @@ export async function checkService(service) {
   switch (service.type) {
     case 'HTTP':
     case 'HTTPS':
-      return await checkHttp(service.url, customHeaders);
+      return await checkHttp(service.url, customHeaders, service.contentMatch);
     
     case 'PING':
       return await checkPing(service.host || service.url);
@@ -361,6 +409,6 @@ export async function checkService(service) {
       return await checkSSL(service.host || service.url, service.port || 443);
     
     default:
-      return await checkHttp(service.url, customHeaders);
+      return await checkHttp(service.url, customHeaders, service.contentMatch);
   }
 }
