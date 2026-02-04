@@ -12,9 +12,6 @@ RUN npm ci
 # Copiar el resto del código
 COPY . .
 
-# Generar Prisma Client
-RUN npx prisma generate
-
 # Construir el frontend
 RUN npm run build
 

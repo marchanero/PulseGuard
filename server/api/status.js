@@ -1,5 +1,6 @@
 import express from 'express';
-import prisma from '../lib/prisma.js';
+import { eq, and, gte, inArray, desc } from 'drizzle-orm';
+import { db, services, serviceLogs } from '../db/index.js';
 
 const router = express.Router();
 
@@ -49,40 +50,38 @@ const rateLimitMiddleware = (req, res, next) => {
 // Obtener estado público de todos los servicios (sin logs detallados)
 router.get('/', rateLimitMiddleware, async (req, res) => {
   try {
-    const services = await prisma.service.findMany({
-      where: { 
-        isDeleted: false,
-        isActive: true
-      },
-      select: {
-        id: true,
-        name: true,
-        type: true,
-        url: true,
-        description: true,
-        status: true,
-        responseTime: true,
-        uptime: true,
-        lastChecked: true,
-        createdAt: true
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    const allServices = await db.select({
+      id: services.id,
+      name: services.name,
+      type: services.type,
+      url: services.url,
+      description: services.description,
+      status: services.status,
+      responseTime: services.responseTime,
+      uptime: services.uptime,
+      lastChecked: services.lastChecked,
+      createdAt: services.createdAt,
+    }).from(services)
+      .where(and(
+        eq(services.isDeleted, false),
+        eq(services.isActive, true)
+      ))
+      .orderBy(desc(services.createdAt));
     
     // Calcular estadísticas generales
-    const totalServices = services.length;
-    const onlineServices = services.filter(s => s.status === 'online').length;
-    const offlineServices = services.filter(s => s.status === 'offline').length;
-    const degradedServices = services.filter(s => s.status === 'degraded').length;
-    const unknownServices = services.filter(s => s.status === 'unknown').length;
+    const totalServices = allServices.length;
+    const onlineServices = allServices.filter(s => s.status === 'online').length;
+    const offlineServices = allServices.filter(s => s.status === 'offline').length;
+    const degradedServices = allServices.filter(s => s.status === 'degraded').length;
+    const unknownServices = allServices.filter(s => s.status === 'unknown').length;
     
     const overallStatus = offlineServices > 0 ? 'partial_outage' : 
                          degradedServices > 0 ? 'degraded' : 
                          onlineServices === totalServices && totalServices > 0 ? 'operational' : 
                          'unknown';
     
-    const averageUptime = services.length > 0 
-      ? services.reduce((acc, s) => acc + (s.uptime || 0), 0) / services.length 
+    const averageUptime = allServices.length > 0 
+      ? allServices.reduce((acc, s) => acc + (s.uptime || 0), 0) / allServices.length 
       : 100;
     
     res.json({
@@ -96,7 +95,7 @@ router.get('/', rateLimitMiddleware, async (req, res) => {
         unknown: unknownServices,
         averageUptime: Math.round(averageUptime * 100) / 100
       },
-      services: services.map(s => ({
+      services: allServices.map(s => ({
         id: s.id,
         name: s.name,
         type: s.type,
@@ -120,37 +119,33 @@ router.get('/incidents', rateLimitMiddleware, async (req, res) => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     
-    const logs = await prisma.serviceLog.findMany({
-      where: {
-        timestamp: {
-          gte: sevenDaysAgo
-        },
-        status: {
-          in: ['offline', 'error']
-        }
-      },
-      include: {
-        service: {
-          select: {
-            name: true,
-            url: true
-          }
-        }
-      },
-      orderBy: {
-        timestamp: 'desc'
-      },
-      take: 50
-    });
+    // Obtener logs con información del servicio
+    const logs = await db.select({
+      id: serviceLogs.id,
+      serviceId: serviceLogs.serviceId,
+      timestamp: serviceLogs.timestamp,
+      status: serviceLogs.status,
+      message: serviceLogs.message,
+      serviceName: services.name,
+      serviceUrl: services.url,
+    })
+      .from(serviceLogs)
+      .innerJoin(services, eq(serviceLogs.serviceId, services.id))
+      .where(and(
+        gte(serviceLogs.timestamp, sevenDaysAgo.toISOString()),
+        inArray(serviceLogs.status, ['offline', 'error'])
+      ))
+      .orderBy(desc(serviceLogs.timestamp))
+      .limit(50);
     
     // Agrupar por día
     const incidentsByDay = logs.reduce((acc, log) => {
-      const date = log.timestamp.toISOString().split('T')[0];
+      const date = new Date(log.timestamp).toISOString().split('T')[0];
       if (!acc[date]) {
         acc[date] = [];
       }
       acc[date].push({
-        service: log.service.name,
+        service: log.serviceName,
         status: log.status,
         message: log.message,
         timestamp: log.timestamp

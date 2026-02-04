@@ -1,0 +1,436 @@
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "prevId": "",
+  "version": "6",
+  "dialect": "sqlite",
+  "tables": {
+    "User": {
+      "name": "User",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": false
+        },
+        "username": {
+          "autoincrement": false,
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "autoincrement": false,
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "alias": {
+          "autoincrement": false,
+          "name": "alias",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "passwordHash": {
+          "autoincrement": false,
+          "name": "passwordHash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updatedAt": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
+          "name": "updatedAt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {},
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "Service": {
+      "name": "Service",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": false
+        },
+        "name": {
+          "autoincrement": false,
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "default": "'HTTP'",
+          "autoincrement": false,
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "url": {
+          "autoincrement": false,
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "host": {
+          "autoincrement": false,
+          "name": "host",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "port": {
+          "autoincrement": false,
+          "name": "port",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "autoincrement": false,
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "default": "'unknown'",
+          "autoincrement": false,
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "responseTime": {
+          "autoincrement": false,
+          "name": "responseTime",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "uptime": {
+          "default": 100,
+          "autoincrement": false,
+          "name": "uptime",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastChecked": {
+          "autoincrement": false,
+          "name": "lastChecked",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "checkInterval": {
+          "default": 60,
+          "autoincrement": false,
+          "name": "checkInterval",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "isActive": {
+          "default": 1,
+          "autoincrement": false,
+          "name": "isActive",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "isDeleted": {
+          "default": 0,
+          "autoincrement": false,
+          "name": "isDeleted",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deletedAt": {
+          "autoincrement": false,
+          "name": "deletedAt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "totalMonitoredTime": {
+          "default": 0,
+          "autoincrement": false,
+          "name": "totalMonitoredTime",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "onlineTime": {
+          "default": 0,
+          "autoincrement": false,
+          "name": "onlineTime",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updatedAt": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
+          "name": "updatedAt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contentMatch": {
+          "autoincrement": false,
+          "name": "contentMatch",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sslExpiryDate": {
+          "autoincrement": false,
+          "name": "sslExpiryDate",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sslDaysRemaining": {
+          "autoincrement": false,
+          "name": "sslDaysRemaining",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dbType": {
+          "autoincrement": false,
+          "name": "dbType",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dbConnectionString": {
+          "autoincrement": false,
+          "name": "dbConnectionString",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "isPublic": {
+          "default": 0,
+          "autoincrement": false,
+          "name": "isPublic",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {},
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "ServiceLog": {
+      "name": "ServiceLog",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": false
+        },
+        "serviceId": {
+          "autoincrement": false,
+          "name": "serviceId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timestamp": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
+          "name": "timestamp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "autoincrement": false,
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "responseTime": {
+          "autoincrement": false,
+          "name": "responseTime",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "message": {
+          "autoincrement": false,
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "idx_service_log_timestamp": {
+          "name": "idx_service_log_timestamp",
+          "columns": [
+            "timestamp"
+          ],
+          "isUnique": false
+        },
+        "idx_service_log_service_id": {
+          "name": "idx_service_log_service_id",
+          "columns": [
+            "serviceId"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "ServiceLog_serviceId_Service_id_fk": {
+          "name": "ServiceLog_serviceId_Service_id_fk",
+          "tableFrom": "ServiceLog",
+          "tableTo": "Service",
+          "columnsFrom": [
+            "serviceId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "PerformanceMetric": {
+      "name": "PerformanceMetric",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": false
+        },
+        "serviceId": {
+          "autoincrement": false,
+          "name": "serviceId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timestamp": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
+          "name": "timestamp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "responseTime": {
+          "autoincrement": false,
+          "name": "responseTime",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "autoincrement": false,
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "uptime": {
+          "autoincrement": false,
+          "name": "uptime",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "idx_performance_metric_timestamp": {
+          "name": "idx_performance_metric_timestamp",
+          "columns": [
+            "timestamp"
+          ],
+          "isUnique": false
+        },
+        "idx_performance_metric_service_id": {
+          "name": "idx_performance_metric_service_id",
+          "columns": [
+            "serviceId"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "PerformanceMetric_serviceId_Service_id_fk": {
+          "name": "PerformanceMetric_serviceId_Service_id_fk",
+          "tableFrom": "PerformanceMetric",
+          "tableTo": "Service",
+          "columnsFrom": [
+            "serviceId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  }
+}

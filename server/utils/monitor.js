@@ -1,4 +1,5 @@
-import prisma from '../lib/prisma.js';
+import { eq } from 'drizzle-orm';
+import { db, services, serviceLogs, performanceMetrics } from '../db/index.js';
 import { checkService } from './checkTypes.js';
 
 // Mapa para almacenar los intervalos activos
@@ -7,9 +8,8 @@ const activeIntervals = new Map();
 // Función para verificar un servicio y actualizar su estado
 async function monitorService(serviceId) {
   try {
-    const service = await prisma.service.findUnique({
-      where: { id: serviceId }
-    });
+    const [service] = await db.select().from(services)
+      .where(eq(services.id, serviceId));
 
     if (!service || !service.isActive) {
       // Si el servicio no existe o está inactivo, detener el monitoreo
@@ -22,6 +22,7 @@ async function monitorService(serviceId) {
     // Calcular uptime basado en el estado actual
     let newUptime = service.uptime || 100;
     const now = new Date();
+    const nowStr = now.toISOString();
     const lastChecked = service.lastChecked;
     
     // Solo recalcular uptime si hay un check previo
@@ -39,50 +40,48 @@ async function monitorService(serviceId) {
       newUptime = totalMonitoredTime > 0 ? (onlineTime / totalMonitoredTime) * 100 : 100;
       
       // Actualizar el servicio con los nuevos datos y métricas de uptime
-      await prisma.service.update({
-        where: { id: serviceId },
-        data: {
+      await db.update(services)
+        .set({
           status: result.status,
           responseTime: result.responseTime,
-          lastChecked: now,
+          lastChecked: nowStr,
           uptime: newUptime,
           totalMonitoredTime: totalMonitoredTime,
-          onlineTime: onlineTime
-        }
-      });
+          onlineTime: onlineTime,
+          updatedAt: nowStr,
+        })
+        .where(eq(services.id, serviceId));
     } else {
       // Primera verificación - inicializar uptime
-      await prisma.service.update({
-        where: { id: serviceId },
-        data: {
+      await db.update(services)
+        .set({
           status: result.status,
           responseTime: result.responseTime,
-          lastChecked: now,
+          lastChecked: nowStr,
           uptime: result.status === 'online' ? 100 : 0,
           totalMonitoredTime: 0,
-          onlineTime: result.status === 'online' ? 0 : 0
-        }
-      });
+          onlineTime: result.status === 'online' ? 0 : 0,
+          updatedAt: nowStr,
+        })
+        .where(eq(services.id, serviceId));
     }
 
     // Crear log
-    await prisma.serviceLog.create({
-      data: {
-        serviceId: serviceId,
-        status: result.status,
-        responseTime: result.responseTime,
-        message: result.message
-      }
+    await db.insert(serviceLogs).values({
+      serviceId: serviceId,
+      status: result.status,
+      responseTime: result.responseTime,
+      message: result.message,
+      timestamp: nowStr,
     });
 
     // Guardar métrica de rendimiento para análisis histórico
-    await prisma.performanceMetric.create({
-      data: {
-        serviceId: serviceId,
-        responseTime: result.responseTime,
-        status: result.status,
-        uptime: newUptime
-      }
+    await db.insert(performanceMetrics).values({
+      serviceId: serviceId,
+      responseTime: result.responseTime,
+      status: result.status,
+      uptime: newUptime,
+      timestamp: nowStr,
     });
 
     console.log(`[Monitor] Servicio ${service.name} verificado: ${result.status} (${result.responseTime}ms)`);
@@ -140,13 +139,12 @@ export function stopAllMonitoring() {
 // Iniciar monitoreo de todos los servicios activos
 export async function startAllMonitoring() {
   try {
-    const services = await prisma.service.findMany({
-      where: { isActive: true }
-    });
+    const activeServices = await db.select().from(services)
+      .where(eq(services.isActive, true));
 
-    console.log(`[Monitor] Iniciando monitoreo de ${services.length} servicios`);
+    console.log(`[Monitor] Iniciando monitoreo de ${activeServices.length} servicios`);
 
-    for (const service of services) {
+    for (const service of activeServices) {
       startMonitoring(service);
     }
   } catch (error) {
