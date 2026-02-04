@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <a href="https://pulseguard-fragrant-paper-4573.fly.dev">
+  <a href="https://pulseguard-fragrant-paper-4573.fly.dev/status">
     <img src="https://img.shields.io/badge/🚀_Demo_Live-Visitar-667eea?style=for-the-badge" alt="Demo" />
   </a>
 </p>
@@ -215,8 +215,8 @@ fly deploy
 ### 🔗 Demo en vivo
 
 <p align="center">
-  <a href="https://pulseguard-fragrant-paper-4573.fly.dev">
-    <img src="https://img.shields.io/badge/🌐_pulseguard--fragrant--paper--4573.fly.dev-Visitar-667eea?style=for-the-badge" alt="Demo Live" />
+  <a href="https://pulseguard-fragrant-paper-4573.fly.dev/status">
+    <img src="https://img.shields.io/badge/🌐_pulseguard--fragrant--paper--4573.fly.dev/status-Visitar-667eea?style=for-the-badge" alt="Demo Live" />
   </a>
 </p>
 
