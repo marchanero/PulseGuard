@@ -338,6 +338,46 @@ function ServiceDrawer({ service, isOpen, onClose }) {
               </div>
             </div>
 
+            {/* Content Validation */}
+            {service.contentMatch && (
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Validación de Contenido</h3>
+                <div className="bg-slate-50 dark:bg-gray-800 rounded-lg p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-slate-500 dark:text-gray-400">Patrón</span>
+                    <div className="flex-1 text-right">
+                      <code className="text-sm bg-white dark:bg-gray-900 px-2 py-1 rounded border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white">
+                        {service.contentMatch}
+                      </code>
+                      {service.contentMatch.startsWith('/') && service.contentMatch.lastIndexOf('/') > 0 && (
+                        <p className="text-xs text-slate-400 dark:text-gray-500 mt-1">Expresión regular</p>
+                      )}
+                    </div>
+                  </div>
+                  {service.lastContentMatch !== undefined && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 dark:text-gray-400">Estado</span>
+                      {service.lastContentMatch ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Contenido válido
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                          Contenido no coincide
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Logs */}
             {logs && logs.length > 0 && (
               <div>

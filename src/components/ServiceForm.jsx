@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, Globe, Clock, FileText, Check, AlertCircle, Server, Shield, Network, Activity, Eye, EyeOff, Tag } from 'lucide-react';
 import ServiceTags from './ServiceTags';
+import ContentMatchEditor from './ContentMatchEditor';
 
 function ServiceForm({ onSubmit }) {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ function ServiceForm({ onSubmit }) {
     port: '',
     description: '',
     tags: [],
+    contentMatch: '',
     checkInterval: 60,
     isActive: true,
     isPublic: false
@@ -96,6 +98,10 @@ function ServiceForm({ onSubmit }) {
         
         if (formData.type === 'HTTP' || formData.type === 'HTTPS') {
           submitData.url = formData.url;
+          // Agregar contentMatch solo si está configurado
+          if (formData.contentMatch && formData.contentMatch.trim()) {
+            submitData.contentMatch = formData.contentMatch.trim();
+          }
         } else {
           submitData.url = formData.host;
           submitData.host = formData.host;
@@ -116,6 +122,7 @@ function ServiceForm({ onSubmit }) {
           port: '',
           description: '',
           tags: [],
+          contentMatch: '',
           checkInterval: 60, 
           isActive: true,
           isPublic: false
@@ -541,6 +548,16 @@ function ServiceForm({ onSubmit }) {
             )}
           </div>
         </div>
+
+        {/* Content Validation - Solo para HTTP/HTTPS */}
+        {(formData.type === 'HTTP' || formData.type === 'HTTPS') && (
+          <div className="p-4 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg">
+            <ContentMatchEditor 
+              contentMatch={formData.contentMatch}
+              onChange={(contentMatch) => setFormData(prev => ({ ...prev, contentMatch }))}
+            />
+          </div>
+        )}
 
         {/* Description */}
         <div>

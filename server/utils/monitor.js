@@ -97,6 +97,11 @@ async function monitorService(serviceId) {
         onlineTime: onlineTime
       };
       
+      // Añadir estado de validación de contenido si existe
+      if (result.contentMatch !== undefined) {
+        updateData.lastContentMatch = result.contentMatch;
+      }
+      
       // Añadir información SSL si está disponible
       if (sslInfo) {
         updateData.sslExpiryDate = sslInfo.expiryDate;
@@ -117,6 +122,11 @@ async function monitorService(serviceId) {
         onlineTime: result.status === 'online' ? 0 : 0
       };
       
+      // Añadir estado de validación de contenido si existe
+      if (result.contentMatch !== undefined) {
+        updateData.lastContentMatch = result.contentMatch;
+      }
+      
       // Añadir información SSL si está disponible
       if (sslInfo) {
         updateData.sslExpiryDate = sslInfo.expiryDate;
@@ -134,7 +144,8 @@ async function monitorService(serviceId) {
       status: result.status,
       responseTime: result.responseTime,
       message: result.message,
-      timestamp: now
+      timestamp: now,
+      contentMatchStatus: result.contentMatch !== undefined ? result.contentMatch : null
     });
 
     // Guardar métrica de rendimiento para análisis histórico
