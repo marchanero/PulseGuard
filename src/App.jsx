@@ -14,6 +14,7 @@ import StatisticsPage from './components/StatisticsPage.jsx';
 import HistoryPage from './components/HistoryPage.jsx';
 import ServiceDetailsPage from './components/ServiceDetailsPage.jsx';
 import SettingsPage from './components/SettingsPage.jsx';
+import WebhookManager from './components/WebhookManager.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { useAuth } from './hooks/useAuth.js';
 import EmptyState from './components/EmptyState';
@@ -320,6 +321,35 @@ function App() {
       <SettingsPage
         onBack={handleBackToDashboard}
       />
+    );
+  }
+
+  // Mostrar página de webhooks
+  if (currentPage === 'webhooks') {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-gray-900">
+        <Header
+          onAddClick={() => setShowForm(!showForm)}
+          onCheckAll={handleCheckAll}
+          servicesCount={services.length}
+          isCompact={isCompact}
+          onToggleCompact={toggleCompact}
+          onOpenCommandPalette={() => setShowCommandPalette(true)}
+          onOpenSettings={() => setCurrentPage('settings')}
+        />
+        <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8 w-full">
+          <div className="mb-6">
+            <button
+              onClick={handleBackToDashboard}
+              className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-2"
+            >
+              ← Volver al Dashboard
+            </button>
+          </div>
+          <WebhookManager />
+        </main>
+        <Footer />
+      </div>
     );
   }
 

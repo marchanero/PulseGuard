@@ -9,6 +9,7 @@ import statusRouter from './api/status.js';
 import analyticsRouter from './api/analytics.js';
 import notificationsRouter from './api/notifications.js';
 import maintenanceRouter from './api/maintenance.js';
+import webhooksRouter from './api/webhooks.js';
 import { startAllMonitoring, stopAllMonitoring } from './utils/monitor.js';
 
 // Cargar .env.local primero, luego .env
@@ -62,6 +63,7 @@ app.use('/api/services', requireAuth, servicesRouter);
 app.use('/api/analytics', requireAuth, analyticsRouter);
 app.use('/api/notifications', requireAuth, notificationsRouter);
 app.use('/api/maintenance', requireAuth, maintenanceRouter);
+app.use('/api/webhooks', requireAuth, webhooksRouter);
 
 // Ruta de health check
 app.get('/api/health', (req, res) => {
