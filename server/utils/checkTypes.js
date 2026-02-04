@@ -8,19 +8,23 @@ import process from 'process';
 const execAsync = promisify(exec);
 
 // Check HTTP/HTTPS endpoint
-export async function checkHttp(url) {
+export async function checkHttp(url, customHeaders = {}) {
   const startTime = Date.now();
   
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
     
+    // Combinar headers por defecto con headers personalizados
+    const headers = {
+      'User-Agent': 'PulseGuard/1.0',
+      ...customHeaders // Los headers personalizados pueden sobrescribir los defaults
+    };
+    
     const response = await fetch(url, {
       method: 'HEAD',
       signal: controller.signal,
-      headers: {
-        'User-Agent': 'PulseGuard/1.0'
-      }
+      headers
     });
     
     clearTimeout(timeout);
@@ -327,10 +331,22 @@ export async function checkSSL(hostname, port = 443) {
 
 // Main check function that routes to specific check type
 export async function checkService(service) {
+  // Parse custom headers if they exist
+  let customHeaders = {};
+  if (service.headers) {
+    try {
+      customHeaders = typeof service.headers === 'string' 
+        ? JSON.parse(service.headers) 
+        : service.headers;
+    } catch (error) {
+      console.error(`[CheckService] Error parsing headers for service ${service.id}:`, error.message);
+    }
+  }
+  
   switch (service.type) {
     case 'HTTP':
     case 'HTTPS':
-      return await checkHttp(service.url);
+      return await checkHttp(service.url, customHeaders);
     
     case 'PING':
       return await checkPing(service.host || service.url);
@@ -345,6 +361,6 @@ export async function checkService(service) {
       return await checkSSL(service.host || service.url, service.port || 443);
     
     default:
-      return await checkHttp(service.url);
+      return await checkHttp(service.url, customHeaders);
   }
 }
