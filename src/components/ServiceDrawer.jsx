@@ -409,6 +409,10 @@ function ServiceDrawer({ service, isOpen, onClose }) {
               }
               return null;
             })()}
+
+            {/* Logs */}
+            {logs && logs.length > 0 && (
+              <div>
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">
                   Historial de Logs ({logs.length})
                 </h3>
@@ -444,7 +448,7 @@ function ServiceDrawer({ service, isOpen, onClose }) {
                 </div>
               </div>
             )}
-            </>
+              </>
             )}
 
             {/* Performance Tab */}
