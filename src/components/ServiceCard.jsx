@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, Clock, Globe, Trash2, RefreshCw, BarChart3, FileText, MoreHorizontal, Zap, Shield, AlertTriangle, Lock, Unlock } from 'lucide-react';
+import { Activity, Clock, Globe, Trash2, RefreshCw, BarChart3, FileText, MoreHorizontal, Zap, Shield, AlertTriangle, Lock, Unlock, Wrench } from 'lucide-react';
 import ServiceCharts from './ServiceCharts';
 import { Tooltip } from './ui';
 import { HeartbeatBarCompact, UptimePercentages } from './HeartbeatBar';
@@ -8,6 +8,7 @@ import ServiceTags from './ServiceTags';
 
 function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic, isCompact, onViewStatistics, onViewHistory }) {
   const [recentLogs, setRecentLogs] = useState([]);
+  const [inMaintenance, setInMaintenance] = useState(false);
 
   // Cargar logs recientes para el HeartbeatBar
   useEffect(() => {
@@ -33,6 +34,31 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
     const interval = setInterval(fetchRecentLogs, 30000);
     return () => clearInterval(interval);
   }, [service?.id, service?.status]);
+
+  // Verificar si el servicio está en mantenimiento
+  useEffect(() => {
+    const checkMaintenance = async () => {
+      if (!service?.id) return;
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/maintenance/check/${service.id}`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setInMaintenance(data.inMaintenance || false);
+        }
+      } catch (error) {
+        console.error('Error checking maintenance:', error);
+      }
+    };
+
+    checkMaintenance();
+    
+    // Refrescar cada minuto
+    const interval = setInterval(checkMaintenance, 60000);
+    return () => clearInterval(interval);
+  }, [service?.id]);
   const [isChecking, setIsChecking] = useState(false);
 
   const getStatusConfig = (status) => {
@@ -199,6 +225,15 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
               {service.isPublic ? <Unlock className="w-2.5 h-2.5" /> : <Lock className="w-2.5 h-2.5" />}
               {service.isPublic ? 'Público' : 'Privado'}
             </span>
+            {/* Badge de Mantenimiento */}
+            {inMaintenance && (
+              <Tooltip content="En mantenimiento - Alertas pausadas">
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-medium rounded-full flex-shrink-0 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                  <Wrench className="w-2.5 h-2.5" />
+                  Mantenimiento
+                </span>
+              </Tooltip>
+            )}
             {/* SSL Badge para URLs HTTPS */}
             {service.url?.startsWith('https://') && service.sslDaysRemaining !== undefined && (
               <SSLBadge sslDaysRemaining={service.sslDaysRemaining} />
@@ -331,6 +366,15 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
               {service.isPublic ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
               {service.isPublic ? 'Público' : 'Privado'}
             </span>
+            {/* Badge de Mantenimiento */}
+            {inMaintenance && (
+              <Tooltip content="En mantenimiento - Alertas pausadas">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                  <Wrench className="w-3 h-3" />
+                  Mantenimiento
+                </span>
+              </Tooltip>
+            )}
             {/* SSL Badge para URLs HTTPS */}
             {service.url?.startsWith('https://') && service.sslDaysRemaining !== undefined && (
               <SSLBadge sslDaysRemaining={service.sslDaysRemaining} />

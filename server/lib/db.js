@@ -42,5 +42,6 @@ export const {
   performanceMetrics,
   notificationChannels,
   notificationRules,
-  notificationHistory
+  notificationHistory,
+  maintenanceWindows
 } = schema;

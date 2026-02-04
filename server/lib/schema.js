@@ -99,3 +99,21 @@ export const notificationHistory = sqliteTable('NotificationHistory', {
   metadata: text('metadata'), // JSON with additional data
   sentAt: text('sentAt').default(sql`strftime('%Y-%m-%dT%H:%M:%S', 'now')`)
 });
+
+// ===== MAINTENANCE WINDOWS =====
+
+// Maintenance windows to suppress alerts during planned maintenance
+export const maintenanceWindows = sqliteTable('maintenance_windows', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  serviceId: integer('service_id').references(() => services.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  description: text('description'),
+  startTime: text('start_time').notNull(),
+  endTime: text('end_time').notNull(),
+  isRecurring: integer('is_recurring', { mode: 'boolean' }).default(false),
+  recurringPattern: text('recurring_pattern'), // JSON: { type: 'daily|weekly|monthly', interval: 1, daysOfWeek: [] }
+  isActive: integer('is_active', { mode: 'boolean' }).default(true),
+  createdBy: text('created_by'),
+  createdAt: text('created_at').default(sql`strftime('%Y-%m-%dT%H:%M:%S', 'now')`),
+  updatedAt: text('updated_at').default(sql`strftime('%Y-%m-%dT%H:%M:%S', 'now')`)
+});

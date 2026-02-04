@@ -8,6 +8,7 @@ import authRouter, { sessionMiddleware, requireAuth } from './api/auth.js';
 import statusRouter from './api/status.js';
 import analyticsRouter from './api/analytics.js';
 import notificationsRouter from './api/notifications.js';
+import maintenanceRouter from './api/maintenance.js';
 import { startAllMonitoring, stopAllMonitoring } from './utils/monitor.js';
 
 // Cargar .env.local primero, luego .env
@@ -60,6 +61,7 @@ app.use('/api/status', statusRouter);
 app.use('/api/services', requireAuth, servicesRouter);
 app.use('/api/analytics', requireAuth, analyticsRouter);
 app.use('/api/notifications', requireAuth, notificationsRouter);
+app.use('/api/maintenance', requireAuth, maintenanceRouter);
 
 // Ruta de health check
 app.get('/api/health', (req, res) => {

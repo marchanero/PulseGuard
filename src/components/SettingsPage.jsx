@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
-  Settings, Bell, Shield, History, 
+  Settings, Bell, Shield, History, Wrench,
   ArrowLeft, Loader2, AlertCircle,
   CheckCircle, XCircle, Clock
 } from 'lucide-react';
 import NotificationChannels from './NotificationChannels';
 import AlertRules from './AlertRules';
+import MaintenanceWindows from './MaintenanceWindows';
 
 // Notification History Component
 function NotificationHistory() {
@@ -172,6 +173,7 @@ export default function SettingsPage({ onBack }) {
   const tabs = [
     { id: 'channels', label: 'Canales', icon: Bell, component: NotificationChannels },
     { id: 'rules', label: 'Reglas', icon: Shield, component: AlertRules },
+    { id: 'maintenance', label: 'Mantenimiento', icon: Wrench, component: MaintenanceWindows },
     { id: 'history', label: 'Historial', icon: History, component: NotificationHistory }
   ];
 
