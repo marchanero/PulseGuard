@@ -57,3 +57,45 @@ export const performanceMetrics = sqliteTable('PerformanceMetric', {
   status: text('status').notNull(),
   uptime: real('uptime').notNull()
 });
+
+// ===== NOTIFICATION SYSTEM =====
+
+// Notification channels (where to send notifications)
+export const notificationChannels = sqliteTable('NotificationChannel', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  type: text('type').notNull(), // 'webhook', 'discord', 'slack', 'telegram', 'email'
+  config: text('config').notNull(), // JSON with type-specific config
+  isEnabled: integer('isEnabled', { mode: 'boolean' }).default(true),
+  isDefault: integer('isDefault', { mode: 'boolean' }).default(false),
+  createdAt: text('createdAt').default(sql`strftime('%Y-%m-%dT%H:%M:%S', 'now')`),
+  updatedAt: text('updatedAt').default(sql`strftime('%Y-%m-%dT%H:%M:%S', 'now')`)
+});
+
+// Notification rules (when to notify)
+export const notificationRules = sqliteTable('NotificationRule', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  serviceId: integer('serviceId').references(() => services.id, { onDelete: 'cascade' }),
+  channelId: integer('channelId').references(() => notificationChannels.id, { onDelete: 'cascade' }),
+  events: text('events').notNull(), // JSON array: ['down', 'up', 'degraded', 'ssl_expiry']
+  threshold: integer('threshold').default(1), // Number of consecutive failures before alerting
+  cooldown: integer('cooldown').default(300), // Seconds between repeated notifications
+  isEnabled: integer('isEnabled', { mode: 'boolean' }).default(true),
+  lastNotified: text('lastNotified'),
+  consecutiveFailures: integer('consecutiveFailures').default(0),
+  createdAt: text('createdAt').default(sql`strftime('%Y-%m-%dT%H:%M:%S', 'now')`),
+  updatedAt: text('updatedAt').default(sql`strftime('%Y-%m-%dT%H:%M:%S', 'now')`)
+});
+
+// Notification history (log of sent notifications)
+export const notificationHistory = sqliteTable('NotificationHistory', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  channelId: integer('channelId').references(() => notificationChannels.id, { onDelete: 'set null' }),
+  serviceId: integer('serviceId').references(() => services.id, { onDelete: 'set null' }),
+  event: text('event').notNull(), // 'down', 'up', 'degraded', 'ssl_expiry', 'test'
+  message: text('message').notNull(),
+  status: text('status').notNull(), // 'sent', 'failed', 'pending'
+  errorMessage: text('errorMessage'),
+  metadata: text('metadata'), // JSON with additional data
+  sentAt: text('sentAt').default(sql`strftime('%Y-%m-%dT%H:%M:%S', 'now')`)
+});

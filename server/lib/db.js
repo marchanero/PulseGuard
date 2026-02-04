@@ -35,4 +35,12 @@ try {
 export const db = drizzle(client, { schema });
 
 // Re-exportar tablas para facilitar imports
-export const { users, services, serviceLogs, performanceMetrics } = schema;
+export const { 
+  users, 
+  services, 
+  serviceLogs, 
+  performanceMetrics,
+  notificationChannels,
+  notificationRules,
+  notificationHistory
+} = schema;

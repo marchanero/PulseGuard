@@ -13,6 +13,7 @@ import { StatusPage } from './components/StatusPage.jsx';
 import StatisticsPage from './components/StatisticsPage.jsx';
 import HistoryPage from './components/HistoryPage.jsx';
 import ServiceDetailsPage from './components/ServiceDetailsPage.jsx';
+import SettingsPage from './components/SettingsPage.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { useAuth } from './hooks/useAuth.js';
 import EmptyState from './components/EmptyState';
@@ -42,7 +43,7 @@ function App() {
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [currentPage, setCurrentPage] = useState('dashboard'); // dashboard, statistics, history, details
+  const [currentPage, setCurrentPage] = useState('dashboard'); // dashboard, statistics, history, details, settings
   const [selectedServiceForPage, setSelectedServiceForPage] = useState(null);
   const toast = useToast();
   const { confirm } = useConfirm();
@@ -313,6 +314,15 @@ function App() {
     );
   }
 
+  // Mostrar página de configuración
+  if (currentPage === 'settings') {
+    return (
+      <SettingsPage
+        onBack={handleBackToDashboard}
+      />
+    );
+  }
+
   return (
     <div className={`min-h-screen bg-slate-50 dark:bg-gray-900 flex flex-col ${isCompact ? 'compact-mode' : ''}`}>
       <Header
@@ -322,6 +332,7 @@ function App() {
         isCompact={isCompact}
         onToggleCompact={toggleCompact}
         onOpenCommandPalette={() => setShowCommandPalette(true)}
+        onOpenSettings={() => setCurrentPage('settings')}
       />
 
       <main className={`flex-1 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 ${isCompact ? 'py-4' : 'py-8'} w-full`}>
