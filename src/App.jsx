@@ -88,6 +88,14 @@ function App() {
       const response = await fetch(`${API_URL}/services`, {
         credentials: 'include'
       });
+      
+      // Si el servidor devuelve 401, la sesión puede haber expirado
+      if (response.status === 401) {
+        console.warn('Sesión expirada o no válida');
+        setLoading(false);
+        return;
+      }
+      
       const data = await response.json();
       setServices(data);
     } catch (error) {
