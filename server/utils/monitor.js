@@ -1,6 +1,6 @@
-import { db, services, serviceLogs, performanceMetrics, notificationRules, notificationChannels } from '../lib/db.js';
+import { db, services, serviceLogs, performanceMetrics, notificationRules, notificationChannels, maintenanceWindows } from '../lib/db.js';
 import { checkService, checkSSL } from './checkTypes.js';
-import { eq, and, isNull, or } from 'drizzle-orm';
+import { eq, and, isNull, or, lte, gte } from 'drizzle-orm';
 import { sendNotification, notifyServiceEvent } from './notificationService.js';
 
 // Mapa para almacenar los intervalos activos
@@ -8,6 +8,31 @@ const activeIntervals = new Map();
 
 // Mapa para almacenar el estado previo de cada servicio (para detectar cambios)
 const previousStatus = new Map();
+
+/**
+ * Check if a service is currently in a maintenance window
+ */
+async function isInMaintenance(serviceId) {
+  try {
+    const now = new Date().toISOString();
+    
+    const activeWindows = await db.select()
+      .from(maintenanceWindows)
+      .where(
+        and(
+          eq(maintenanceWindows.serviceId, serviceId),
+          eq(maintenanceWindows.isActive, true),
+          lte(maintenanceWindows.startTime, now),
+          gte(maintenanceWindows.endTime, now)
+        )
+      );
+    
+    return activeWindows.length > 0;
+  } catch (error) {
+    console.error(`[Monitor] Error checking maintenance status for service ${serviceId}:`, error.message);
+    return false;
+  }
+}
 
 // Función para verificar un servicio y actualizar su estado
 async function monitorService(serviceId) {
@@ -125,6 +150,9 @@ async function monitorService(serviceId) {
     const prevStatus = previousStatus.get(serviceId);
     const currentStatus = result.status;
     
+    // Check if service is in maintenance mode
+    const inMaintenance = await isInMaintenance(serviceId);
+    
     // Detect status change
     if (prevStatus && prevStatus !== currentStatus) {
       let event = null;
@@ -138,14 +166,16 @@ async function monitorService(serviceId) {
         event = 'degraded';
       }
       
-      if (event) {
-        // Trigger notifications for this service
+      if (event && !inMaintenance) {
+        // Only trigger notifications if NOT in maintenance
         await triggerNotifications(service, event, result);
+      } else if (event && inMaintenance) {
+        console.log(`[Monitor] Service ${service.name} event ${event} suppressed - in maintenance mode`);
       }
     }
     
-    // Check SSL warnings
-    if (sslInfo && sslInfo.daysRemaining !== null) {
+    // Check SSL warnings (also skip if in maintenance)
+    if (sslInfo && sslInfo.daysRemaining !== null && !inMaintenance) {
       if (sslInfo.daysRemaining <= 0) {
         await triggerNotifications(service, 'ssl_expiry', { sslInfo });
       } else if (sslInfo.daysRemaining <= 14) {
