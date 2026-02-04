@@ -18,7 +18,7 @@ export async function checkHttp(url, customHeaders = {}, contentMatch = null) {
     // Combinar headers por defecto con headers personalizados
     const headers = {
       'User-Agent': 'PulseGuard/1.0',
-      ...customHeaders
+      ...customHeaders // Los headers personalizados pueden sobrescribir los defaults
     };
     
     // Si necesitamos validar contenido, usar GET en lugar de HEAD

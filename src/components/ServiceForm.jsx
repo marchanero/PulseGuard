@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Globe, Clock, FileText, Check, AlertCircle, Server, Shield, Network, Activity, Eye, EyeOff, Tag } from 'lucide-react';
 import ServiceTags from './ServiceTags';
 import ContentMatchEditor from './ContentMatchEditor';
+import HeadersEditor from './HeadersEditor';
 
 function ServiceForm({ onSubmit }) {
   const [formData, setFormData] = useState({
@@ -13,6 +14,7 @@ function ServiceForm({ onSubmit }) {
     description: '',
     tags: [],
     contentMatch: '',
+    headers: {},
     checkInterval: 60,
     isActive: true,
     isPublic: false
@@ -101,6 +103,10 @@ function ServiceForm({ onSubmit }) {
           // Agregar contentMatch solo si está configurado
           if (formData.contentMatch && formData.contentMatch.trim()) {
             submitData.contentMatch = formData.contentMatch.trim();
+          }
+          // Incluir headers solo si hay alguno definido
+          if (formData.headers && Object.keys(formData.headers).length > 0) {
+            submitData.headers = formData.headers;
           }
         } else {
           submitData.url = formData.host;
@@ -555,6 +561,16 @@ function ServiceForm({ onSubmit }) {
             <ContentMatchEditor 
               contentMatch={formData.contentMatch}
               onChange={(contentMatch) => setFormData(prev => ({ ...prev, contentMatch }))}
+            />
+          </div>
+        )}
+
+        {/* Custom Headers - Solo para HTTP/HTTPS */}
+        {(formData.type === 'HTTP' || formData.type === 'HTTPS') && (
+          <div className="p-4 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg">
+            <HeadersEditor 
+              headers={formData.headers}
+              onChange={(headers) => setFormData(prev => ({ ...prev, headers }))}
             />
           </div>
         )}

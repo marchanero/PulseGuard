@@ -378,9 +378,37 @@ function ServiceDrawer({ service, isOpen, onClose }) {
               </div>
             )}
 
-            {/* Logs */}
-            {logs && logs.length > 0 && (
-              <div>
+            {/* Custom Headers */}
+            {service.headers && (() => {
+              try {
+                const headers = typeof service.headers === 'string' ? JSON.parse(service.headers) : service.headers;
+                const headerEntries = Object.entries(headers);
+                if (headerEntries.length > 0) {
+                  return (
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Headers HTTP Personalizados</h3>
+                      <div className="bg-slate-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
+                        {headerEntries.map(([key, value]) => (
+                          <div key={key} className="flex justify-between items-start gap-4 pb-2 border-b border-slate-200 dark:border-gray-700 last:border-0 last:pb-0">
+                            <span className="text-sm font-medium text-slate-600 dark:text-gray-400 font-mono">
+                              {key}
+                            </span>
+                            <span className="text-sm text-slate-900 dark:text-white font-mono break-all text-right">
+                              {key.toLowerCase().includes('auth') || key.toLowerCase().includes('token') || key.toLowerCase().includes('key')
+                                ? '•'.repeat(Math.min(value.length, 20))
+                                : value}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+              } catch (e) {
+                return null;
+              }
+              return null;
+            })()}
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">
                   Historial de Logs ({logs.length})
                 </h3>

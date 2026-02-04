@@ -298,9 +298,9 @@ router.get('/:id', async (req, res) => {
 // Crear un nuevo servicio
 router.post('/', async (req, res) => {
   try {
-    const { name, type, url, host, port, description, checkInterval, isActive, isPublic, tags, contentMatch } = req.body;
+    const { name, type, url, host, port, description, checkInterval, isActive, isPublic, tags, headers, contentMatch } = req.body;
     
-    console.log('Creando servicio:', { name, type, url, host, port, tags, contentMatch });
+    console.log('Creando servicio:', { name, type, url, host, port, tags, headers, contentMatch });
     
     if (!name) {
       return res.status(400).json({ error: 'El nombre es requerido' });
@@ -329,6 +329,9 @@ router.post('/', async (req, res) => {
     // Procesar tags (convertir a JSON string si es array)
     const tagsJson = Array.isArray(tags) ? JSON.stringify(tags) : null;
     
+    // Procesar headers (convertir a JSON string si es objeto)
+    const headersJson = headers && typeof headers === 'object' ? JSON.stringify(headers) : null;
+    
     const now = Date.now();
     const newService = await db.insert(serviceTable).values({
       name,
@@ -338,6 +341,7 @@ router.post('/', async (req, res) => {
       port: port ? parseInt(port) : null,
       description: description || '',
       tags: tagsJson,
+      headers: headersJson,
       contentMatch: contentMatch || null,
       checkInterval: interval,
       isActive: isActive !== undefined ? isActive : true,

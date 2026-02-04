@@ -38,7 +38,8 @@ export const services = sqliteTable('Service', {
   sslExpiryDate: text('sslExpiryDate'),
   sslDaysRemaining: integer('sslDaysRemaining'),
   dbType: text('dbType'),
-  dbConnectionString: text('dbConnectionString')
+  dbConnectionString: text('dbConnectionString'),
+  headers: text('headers') // JSON object with custom headers for requests
 });
 
 export const serviceLogs = sqliteTable('ServiceLog', {
