@@ -45,8 +45,13 @@ export function IncidentsPage() {
 
   const fetchServices = async () => {
     try {
+      const token = localStorage.getItem('authToken');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const response = await fetch(`${API_URL}/services`, {
-        credentials: 'include'
+        headers
       });
       const data = await response.json();
       setServices(data);
@@ -61,9 +66,14 @@ export function IncidentsPage() {
   const fetchIncidents = async (serviceId) => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('authToken');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const response = await fetch(
         `${API_URL}/analytics/incidents/${serviceId}?days=${days}`,
-        { credentials: 'include' }
+        { headers }
       );
       const data = await response.json();
       setIncidents(data);

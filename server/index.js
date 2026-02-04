@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import servicesRouter from './api/services.js';
-import authRouter, { sessionMiddleware, requireAuth } from './api/auth.js';
+import authRouter, { requireAuth } from './api/auth.js';
 import statusRouter from './api/status.js';
 import analyticsRouter from './api/analytics.js';
 import { startAllMonitoring, stopAllMonitoring } from './utils/monitor.js';
@@ -23,9 +23,6 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
-
-// Middleware de sesión
-app.use(sessionMiddleware);
 
 // Rutas públicas (no requieren autenticación)
 app.use('/api/auth', authRouter);

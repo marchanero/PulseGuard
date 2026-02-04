@@ -15,18 +15,30 @@ export function AuthProvider({ children }) {
 
   const checkAuth = async () => {
     try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setIsAuthenticated(false);
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
       const response = await fetch(`${API_URL}/auth/check`, {
-        credentials: 'include'
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
       setIsAuthenticated(data.authenticated);
       if (data.authenticated && data.user) {
         setUser(data.user);
+      } else {
+        // Token inválido o expirado, eliminarlo
+        localStorage.removeItem('authToken');
       }
     } catch (error) {
       console.error('Error checking auth:', error);
       setIsAuthenticated(false);
       setUser(null);
+      localStorage.removeItem('authToken');
     } finally {
       setIsLoading(false);
     }
@@ -37,13 +49,14 @@ export function AuthProvider({ children }) {
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ username, password })
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        // Guardar el token en localStorage
+        localStorage.setItem('authToken', data.token);
         setIsAuthenticated(true);
         setUser(data.user);
         return { success: true, user: data.user };
@@ -61,13 +74,14 @@ export function AuthProvider({ children }) {
       const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ username, email, password, alias })
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        // Guardar el token en localStorage
+        localStorage.setItem('authToken', data.token);
         setIsAuthenticated(true);
         setUser(data.user);
         return { success: true, user: data.user };
@@ -83,13 +97,15 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       await fetch(`${API_URL}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include'
+        method: 'POST'
       });
-      setIsAuthenticated(false);
-      setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
+    } finally {
+      // Eliminar el token de localStorage
+      localStorage.removeItem('authToken');
+      setIsAuthenticated(false);
+      setUser(null);
     }
   };
 

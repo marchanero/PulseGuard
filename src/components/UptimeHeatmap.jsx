@@ -34,9 +34,14 @@ export function UptimeHeatmap({ serviceId, days = 90 }) {
   const fetchHeatmapData = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('authToken');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const response = await fetch(
         `${API_URL}/analytics/heatmap/${serviceId}?days=${selectedDays}`,
-        { credentials: 'include' }
+        { headers }
       );
       
       if (!response.ok) throw new Error('Error al cargar datos');

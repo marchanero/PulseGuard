@@ -1,6 +1,6 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
-import session from 'express-session';
+import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { eq, or } from 'drizzle-orm';
 import { db, users } from '../db/index.js';
@@ -9,25 +9,26 @@ dotenv.config();
 
 const router = express.Router();
 
-// Middleware de sesión
-export const sessionMiddleware = session({
-  secret: process.env.SESSION_SECRET || 'default-secret-change-this',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
-    sameSite: 'lax'
-  }
-});
+const JWT_SECRET = process.env.SESSION_SECRET || 'default-secret-change-this';
+const JWT_EXPIRES_IN = '7d'; // 7 días
 
-// Middleware para verificar autenticación
+// Middleware para verificar autenticación con JWT
 export const requireAuth = (req, res, next) => {
-  if (req.session && req.session.isAuthenticated) {
-    return next();
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'No autorizado' });
   }
-  return res.status(401).json({ error: 'No autorizado' });
+  
+  const token = authHeader.substring(7); // Remover 'Bearer '
+  
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    return next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Token inválido o expirado' });
+  }
 };
 
 // Login con usuario y contraseña
@@ -57,16 +58,22 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
     }
     
-    // Crear sesión
-    req.session.isAuthenticated = true;
-    req.session.userId = user.id;
-    req.session.username = user.username;
-    req.session.alias = user.alias;
-    req.session.loginTime = new Date().toISOString();
+    // Generar JWT token
+    const token = jwt.sign(
+      { 
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        alias: user.alias
+      },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
     
     res.json({ 
       success: true, 
       message: 'Autenticación exitosa',
+      token,
       user: {
         id: user.id,
         username: user.username,
@@ -134,16 +141,22 @@ router.post('/register', async (req, res) => {
       updatedAt: now,
     }).returning();
     
-    // Crear sesión automáticamente después del registro
-    req.session.isAuthenticated = true;
-    req.session.userId = newUser.id;
-    req.session.username = newUser.username;
-    req.session.alias = newUser.alias;
-    req.session.loginTime = now;
+    // Generar JWT token automáticamente después del registro
+    const token = jwt.sign(
+      { 
+        id: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+        alias: newUser.alias
+      },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
     
     res.status(201).json({ 
       success: true, 
       message: 'Usuario registrado exitosamente',
+      token,
       user: {
         id: newUser.id,
         username: newUser.username,
@@ -159,16 +172,25 @@ router.post('/register', async (req, res) => {
 
 // Verificar sesión
 router.get('/check', (req, res) => {
-  if (req.session && req.session.isAuthenticated) {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.json({ authenticated: false });
+  }
+  
+  const token = authHeader.substring(7);
+  
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
     res.json({ 
       authenticated: true,
       user: {
-        id: req.session.userId,
-        username: req.session.username,
-        alias: req.session.alias
+        id: decoded.id,
+        username: decoded.username,
+        alias: decoded.alias
       }
     });
-  } else {
+  } catch (error) {
     res.json({ authenticated: false });
   }
 });
@@ -183,7 +205,7 @@ router.get('/profile', requireAuth, async (req, res) => {
       alias: users.alias,
       createdAt: users.createdAt,
     }).from(users)
-      .where(eq(users.id, req.session.userId));
+      .where(eq(users.id, req.user.id));
     
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -198,12 +220,8 @@ router.get('/profile', requireAuth, async (req, res) => {
 
 // Logout
 router.post('/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Error al cerrar sesión' });
-    }
-    res.json({ success: true, message: 'Sesión cerrada' });
-  });
+  // Con JWT, el cliente es responsable de eliminar el token
+  res.json({ success: true, message: 'Sesión cerrada' });
 });
 
 // Endpoint para generar hash (solo para configuración inicial)

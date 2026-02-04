@@ -77,8 +77,13 @@ function App() {
   const fetchServices = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('authToken');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const response = await fetch(`${API_URL}/services`, {
-        credentials: 'include'
+        headers
       });
       const data = await response.json();
       setServices(data);
@@ -93,10 +98,14 @@ function App() {
   const handleAddService = async (serviceData) => {
     try {
       console.log('Enviando datos:', serviceData);
+      const token = localStorage.getItem('authToken');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const response = await fetch(`${API_URL}/services`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers,
         body: JSON.stringify(serviceData)
       });
       
@@ -129,9 +138,14 @@ function App() {
     if (!confirmed) return;
 
     try {
+      const token = localStorage.getItem('authToken');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const response = await fetch(`${API_URL}/services/${id}`, {
         method: 'DELETE',
-        credentials: 'include'
+        headers
       });
       
       if (response.ok) {
@@ -146,9 +160,14 @@ function App() {
 
   const handleCheckService = async (id) => {
     try {
+      const token = localStorage.getItem('authToken');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const response = await fetch(`${API_URL}/services/${id}/check`, {
         method: 'POST',
-        credentials: 'include'
+        headers
       });
       
       if (response.ok) {
@@ -163,9 +182,14 @@ function App() {
 
   const handleCheckAll = async () => {
     try {
+      const token = localStorage.getItem('authToken');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const response = await fetch(`${API_URL}/services/check-all`, {
         method: 'POST',
-        credentials: 'include'
+        headers
       });
       
       if (response.ok) {
