@@ -17,8 +17,7 @@ const getCookieOptions = () => {
     secure: isProduction,
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 horas
-    sameSite: isProduction ? 'none' : 'lax',
-    domain: isProduction ? '.fly.dev' : undefined
+    sameSite: isProduction ? 'none' : 'lax'
   };
 };
 

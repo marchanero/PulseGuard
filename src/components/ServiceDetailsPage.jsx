@@ -21,22 +21,16 @@ function ServiceDetailsPage({ serviceId, onBack }) {
       setLoading(true);
       setError(null);
       
-      const token = localStorage.getItem('authToken');
-      const headers = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
       // Obtener datos del servicio
       const serviceResponse = await fetch(`${API_URL}/services/${serviceId}`, {
-        headers
+        credentials: 'include'
       });
       const serviceData = await serviceResponse.json();
       setService(serviceData);
 
       // Obtener logs del servicio
       const logsResponse = await fetch(`${API_URL}/services/${serviceId}/logs`, {
-        headers
+        credentials: 'include'
       });
       const logsData = await logsResponse.json();
       setLogs(logsData || []);
