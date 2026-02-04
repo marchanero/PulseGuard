@@ -6,6 +6,7 @@ import { ThemeProvider } from './context/ThemeContext.jsx'
 import { ToastProvider } from './context/ToastContext.jsx'
 import { ConfirmProvider } from './context/ConfirmContext.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
+import { NotificationProvider } from './components/NotificationSystem.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -13,7 +14,9 @@ createRoot(document.getElementById('root')).render(
       <ThemeProvider>
         <ToastProvider>
           <ConfirmProvider>
-            <App />
+            <NotificationProvider>
+              <App />
+            </NotificationProvider>
           </ConfirmProvider>
         </ToastProvider>
       </ThemeProvider>

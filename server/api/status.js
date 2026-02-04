@@ -60,6 +60,8 @@ router.get('/', rateLimitMiddleware, async (req, res) => {
       responseTime: serviceTable.responseTime,
       uptime: serviceTable.uptime,
       lastChecked: serviceTable.lastChecked,
+      sslExpiryDate: serviceTable.sslExpiryDate,
+      sslDaysRemaining: serviceTable.sslDaysRemaining,
       createdAt: serviceTable.createdAt
     })
     .from(serviceTable)

@@ -1,5 +1,5 @@
 import { db, services, serviceLogs, performanceMetrics } from '../lib/db.js';
-import { checkService } from './checkTypes.js';
+import { checkService, checkSSL } from './checkTypes.js';
 import { eq, and } from 'drizzle-orm';
 
 // Mapa para almacenar los intervalos activos
@@ -18,6 +18,25 @@ async function monitorService(serviceId) {
     }
 
     const result = await checkService(service);
+    
+    // Verificar SSL para URLs HTTPS
+    let sslInfo = null;
+    if (service.url && service.url.startsWith('https://')) {
+      try {
+        const urlObj = new URL(service.url);
+        const sslResult = await checkSSL(urlObj.hostname, urlObj.port || 443);
+        if (sslResult.data) {
+          sslInfo = {
+            expiryDate: sslResult.data.validTo,
+            daysRemaining: sslResult.data.daysUntilExpiry,
+            issuer: sslResult.data.issuer,
+            subject: sslResult.data.subject
+          };
+        }
+      } catch (sslError) {
+        console.error(`[Monitor] Error verificando SSL para ${service.name}:`, sslError.message);
+      }
+    }
 
     // Calcular uptime basado en el estado actual
     let newUptime = service.uptime || 100;
@@ -40,27 +59,43 @@ async function monitorService(serviceId) {
       newUptime = totalMonitoredTime > 0 ? (onlineTime / totalMonitoredTime) * 100 : 100;
       
       // Actualizar el servicio con los nuevos datos y métricas de uptime
+      const updateData = {
+        status: result.status,
+        responseTime: result.responseTime,
+        lastChecked: now,
+        uptime: newUptime,
+        totalMonitoredTime: totalMonitoredTime,
+        onlineTime: onlineTime
+      };
+      
+      // Añadir información SSL si está disponible
+      if (sslInfo) {
+        updateData.sslExpiryDate = sslInfo.expiryDate;
+        updateData.sslDaysRemaining = sslInfo.daysRemaining;
+      }
+      
       await db.update(services)
-        .set({
-          status: result.status,
-          responseTime: result.responseTime,
-          lastChecked: now,
-          uptime: newUptime,
-          totalMonitoredTime: totalMonitoredTime,
-          onlineTime: onlineTime
-        })
+        .set(updateData)
         .where(eq(services.id, serviceId));
     } else {
       // Primera verificación - inicializar uptime
+      const updateData = {
+        status: result.status,
+        responseTime: result.responseTime,
+        lastChecked: now,
+        uptime: result.status === 'online' ? 100 : 0,
+        totalMonitoredTime: 0,
+        onlineTime: result.status === 'online' ? 0 : 0
+      };
+      
+      // Añadir información SSL si está disponible
+      if (sslInfo) {
+        updateData.sslExpiryDate = sslInfo.expiryDate;
+        updateData.sslDaysRemaining = sslInfo.daysRemaining;
+      }
+      
       await db.update(services)
-        .set({
-          status: result.status,
-          responseTime: result.responseTime,
-          lastChecked: now,
-          uptime: result.status === 'online' ? 100 : 0,
-          totalMonitoredTime: 0,
-          onlineTime: result.status === 'online' ? 0 : 0
-        })
+        .set(updateData)
         .where(eq(services.id, serviceId));
     }
 

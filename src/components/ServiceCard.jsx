@@ -1,9 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Activity, Clock, Globe, Trash2, RefreshCw, BarChart3, FileText, MoreHorizontal, Zap, Shield, AlertTriangle, Lock, Unlock } from 'lucide-react';
 import ServiceCharts from './ServiceCharts';
 import { Tooltip } from './ui';
+import { HeartbeatBarCompact, UptimePercentages } from './HeartbeatBar';
+import { SSLBadge } from './SSLInfo';
+import ServiceTags from './ServiceTags';
 
 function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic, isCompact, onViewStatistics, onViewHistory }) {
+  const [recentLogs, setRecentLogs] = useState([]);
+
+  // Cargar logs recientes para el HeartbeatBar
+  useEffect(() => {
+    const fetchRecentLogs = async () => {
+      if (!service?.id) return;
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/services/${service.id}/logs?limit=50`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setRecentLogs(data.logs || []);
+        }
+      } catch (error) {
+        console.error('Error fetching logs for heartbeat:', error);
+      }
+    };
+
+    fetchRecentLogs();
+    
+    // Refrescar cada 30 segundos
+    const interval = setInterval(fetchRecentLogs, 30000);
+    return () => clearInterval(interval);
+  }, [service?.id, service?.status]);
   const [isChecking, setIsChecking] = useState(false);
 
   const getStatusConfig = (status) => {
@@ -158,7 +187,7 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
           </div>
 
           {/* Service Info */}
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h3 className="text-base font-semibold text-slate-900 dark:text-white truncate">
               {service.name}
             </h3>
@@ -170,6 +199,10 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
               {service.isPublic ? <Unlock className="w-2.5 h-2.5" /> : <Lock className="w-2.5 h-2.5" />}
               {service.isPublic ? 'Público' : 'Privado'}
             </span>
+            {/* SSL Badge para URLs HTTPS */}
+            {service.url?.startsWith('https://') && service.sslDaysRemaining !== undefined && (
+              <SSLBadge sslDaysRemaining={service.sslDaysRemaining} />
+            )}
           </div>
           <a 
             href={service.url} 
@@ -179,6 +212,18 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
           >
             {service.url}
           </a>
+
+          {/* Tags del servicio */}
+          {service.tags && service.tags.length > 0 && (
+            <div className="mt-2">
+              <ServiceTags tags={service.tags} size="small" maxVisible={3} />
+            </div>
+          )}
+
+          {/* HeartbeatBar Compacto */}
+          <div className="mt-3">
+            <HeartbeatBarCompact logs={recentLogs} maxBars={20} />
+          </div>
 
           {/* Compact Metrics */}
           <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-gray-700">
@@ -274,7 +319,7 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
 
         {/* Service Info */}
         <div className="mb-5">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">
               {service.name}
             </h3>
@@ -286,6 +331,10 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
               {service.isPublic ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
               {service.isPublic ? 'Público' : 'Privado'}
             </span>
+            {/* SSL Badge para URLs HTTPS */}
+            {service.url?.startsWith('https://') && service.sslDaysRemaining !== undefined && (
+              <SSLBadge sslDaysRemaining={service.sslDaysRemaining} />
+            )}
           </div>
           <a 
             href={service.url} 
@@ -296,6 +345,13 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
             <Globe className="w-3.5 h-3.5" />
             <span className="truncate max-w-[220px] sm:max-w-[280px]">{service.url}</span>
           </a>
+          
+          {/* Tags del servicio */}
+          {service.tags && service.tags.length > 0 && (
+            <div className="mt-2">
+              <ServiceTags tags={service.tags} size="small" maxVisible={5} />
+            </div>
+          )}
         </div>
 
         {service.description && (
@@ -303,6 +359,17 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
             {service.description}
           </p>
         )}
+
+        {/* HeartbeatBar - Inspirado en Uptime Kuma */}
+        <div className="mb-5 p-3 rounded-xl bg-slate-50 dark:bg-gray-700/30">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-slate-500 dark:text-gray-400">
+              Historial de estado
+            </span>
+            <UptimePercentages logs={recentLogs} periods={['24h', '7d', '30d']} />
+          </div>
+          <HeartbeatBarCompact logs={recentLogs} maxBars={45} />
+        </div>
 
         {/* Modern Metrics Grid */}
         <div className="grid grid-cols-4 gap-2 mb-5">

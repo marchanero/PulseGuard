@@ -1,9 +1,13 @@
+import { useState } from 'react';
 import { Plus, RefreshCw, Search, Command, Minimize2, Maximize2, Activity, LogOut, ExternalLink } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import { useAuth } from '../hooks/useAuth.js';
+import { NotificationBell, NotificationPanel } from './NotificationSystem';
 
 function Header({ onAddClick, onCheckAll, servicesCount, isCompact, onToggleCompact, onOpenCommandPalette }) {
   const { logout } = useAuth();
+  const [showNotifications, setShowNotifications] = useState(false);
+
   return (
     <header className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-800">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -36,6 +40,15 @@ function Header({ onAddClick, onCheckAll, servicesCount, isCompact, onToggleComp
           {/* Actions */}
           <div className="flex items-center gap-1.5">
             <ThemeToggle />
+            
+            {/* Notifications */}
+            <div className="relative">
+              <NotificationBell onClick={() => setShowNotifications(!showNotifications)} />
+              <NotificationPanel 
+                isOpen={showNotifications} 
+                onClose={() => setShowNotifications(false)} 
+              />
+            </div>
             
             {/* Compact Mode Toggle */}
             <button
