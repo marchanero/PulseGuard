@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import ServiceCharts from './ServiceCharts';
 import PerformanceChart from './PerformanceChart';
+import { HeartbeatBarCompact, UptimePercentages } from './HeartbeatBar';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -67,7 +68,7 @@ const serviceTypeIcons = {
   SSL: Shield
 };
 
-function ServiceStatus({ service, onClick }) {
+function ServiceStatus({ service, onClick, logs = [] }) {
   const TypeIcon = serviceTypeIcons[service.type] || Globe;
   
   const getStatusColor = (status) => {
@@ -91,31 +92,23 @@ function ServiceStatus({ service, onClick }) {
   return (
     <div 
       onClick={onClick}
-      className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md transition-all cursor-pointer"
+      className="p-4 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md transition-all cursor-pointer"
     >
-      <div className="flex items-center gap-4">
-        <div className="p-2 rounded-lg bg-slate-100 dark:bg-gray-700">
-          <TypeIcon className="w-5 h-5 text-slate-600 dark:text-gray-400" />
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-4">
+          <div className="p-2 rounded-lg bg-slate-100 dark:bg-gray-700">
+            <TypeIcon className="w-5 h-5 text-slate-600 dark:text-gray-400" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-slate-900 dark:text-white">
+              {service.name}
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-gray-400">
+              {service.type} • {service.responseTime ? `${service.responseTime}ms` : '—'}
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 className="font-semibold text-slate-900 dark:text-white">
-            {service.name}
-          </h3>
-          <p className="text-sm text-slate-500 dark:text-gray-400">
-            {service.type} • {service.url}
-          </p>
-        </div>
-      </div>
-      
-      <div className="flex items-center gap-4">
-        <div className="text-right hidden sm:block">
-          <p className="text-sm font-medium text-slate-900 dark:text-white">
-            {service.uptime?.toFixed(2) || '100.00'}% uptime
-          </p>
-          <p className="text-xs text-slate-500 dark:text-gray-400">
-            {service.responseTime ? `${service.responseTime}ms` : '—'}
-          </p>
-        </div>
+        
         <div className="flex items-center gap-2">
           <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor(service.status)} animate-pulse`} />
           <span className={`text-sm font-medium ${
@@ -127,6 +120,17 @@ function ServiceStatus({ service, onClick }) {
             {getStatusText(service.status)}
           </span>
         </div>
+      </div>
+      
+      {/* HeartbeatBar */}
+      <div className="mt-3">
+        <HeartbeatBarCompact logs={logs} maxBars={45} />
+      </div>
+      
+      {/* Uptime info */}
+      <div className="flex items-center justify-between mt-2 text-xs text-slate-500 dark:text-gray-400">
+        <span>{service.uptime?.toFixed(2) || '100.00'}% uptime</span>
+        <span className="text-slate-400">Haz clic para ver detalles</span>
       </div>
     </div>
   );
@@ -157,6 +161,7 @@ export function StatusPage() {
   const [selectedService, setSelectedService] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerTab, setDrawerTab] = useState('details');
+  const [serviceLogs, setServiceLogs] = useState({});
 
   const handleServiceClick = (service) => {
     setSelectedService(service);
@@ -169,6 +174,26 @@ export function StatusPage() {
     setSelectedService(null);
   };
 
+  // Cargar logs de todos los servicios para los HeartbeatBars
+  const fetchServiceLogs = async (services) => {
+    const logsMap = {};
+    await Promise.all(
+      services.map(async (service) => {
+        try {
+          const response = await fetch(`${API_URL}/services/${service.id}/logs?limit=50`);
+          if (response.ok) {
+            const data = await response.json();
+            logsMap[service.id] = data.logs || [];
+          }
+        } catch (error) {
+          console.error(`Error fetching logs for service ${service.id}:`, error);
+          logsMap[service.id] = [];
+        }
+      })
+    );
+    setServiceLogs(logsMap);
+  };
+
   const fetchStatus = async () => {
     try {
       const response = await fetch(`${API_URL}/status`);
@@ -177,6 +202,11 @@ export function StatusPage() {
       setData(statusData);
       setLastUpdated(new Date());
       setError(null);
+      
+      // Cargar logs para HeartbeatBars
+      if (statusData?.services?.length > 0) {
+        fetchServiceLogs(statusData.services);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -326,6 +356,7 @@ export function StatusPage() {
                   key={service.id} 
                   service={service} 
                   onClick={() => handleServiceClick(service)}
+                  logs={serviceLogs[service.id] || []}
                 />
               ))}
             </div>

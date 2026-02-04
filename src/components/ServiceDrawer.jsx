@@ -1,8 +1,38 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import ServiceCharts from './ServiceCharts';
 import PerformanceChart from './PerformanceChart';
+import HeartbeatBar, { UptimePercentages } from './HeartbeatBar';
 
 function ServiceDrawer({ service, isOpen, onClose }) {
+  const [logs, setLogs] = useState([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  // Cargar logs para el HeartbeatBar
+  useEffect(() => {
+    const fetchLogs = async () => {
+      if (!service?.id || !isOpen) return;
+      setLoadingLogs(true);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/services/${service.id}/logs?limit=100`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setLogs(data.logs || []);
+        }
+      } catch (error) {
+        console.error('Error fetching logs:', error);
+      } finally {
+        setLoadingLogs(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchLogs();
+    }
+  }, [service?.id, isOpen]);
+
   // Close on escape key
   useEffect(() => {
     const handleEscape = (e) => {
@@ -152,13 +182,36 @@ function ServiceDrawer({ service, isOpen, onClose }) {
               </div>
             </div>
 
+            {/* HeartbeatBar - Historial visual de estado */}
+            <div className="bg-slate-50 dark:bg-gray-800 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                  Historial de Estado
+                </h3>
+                <UptimePercentages logs={logs} periods={['24h', '7d', '30d']} />
+              </div>
+              {loadingLogs ? (
+                <div className="h-8 bg-slate-200 dark:bg-gray-700 rounded animate-pulse" />
+              ) : (
+                <HeartbeatBar 
+                  logs={logs} 
+                  size="large" 
+                  maxBars={60}
+                  showTooltip={true}
+                />
+              )}
+              <p className="text-xs text-slate-400 dark:text-gray-500 mt-2 text-center">
+                Últimas {logs.length} verificaciones • Pasa el cursor para ver detalles
+              </p>
+            </div>
+
             {/* Performance Chart */}
             <PerformanceChart serviceId={service.id} />
 
             {/* Charts */}
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Distribución de Estado</h3>
-              <ServiceCharts logs={service.logs} uptime={service.uptime} />
+              <ServiceCharts logs={logs.length > 0 ? logs : service.logs} uptime={service.uptime} />
             </div>
 
             {/* Details */}
@@ -201,14 +254,14 @@ function ServiceDrawer({ service, isOpen, onClose }) {
             </div>
 
             {/* Logs */}
-            {service.logs && service.logs.length > 0 && (
+            {logs && logs.length > 0 && (
               <div>
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">
-                  Historial de Logs ({service.logs.length})
+                  Historial de Logs ({logs.length})
                 </h3>
                 <div className="bg-slate-50 dark:bg-gray-800 rounded-lg overflow-hidden">
                   <div className="max-h-64 overflow-y-auto">
-                    {service.logs.map((log, idx) => (
+                    {logs.map((log, idx) => (
                       <div
                         key={idx}
                         className={`px-4 py-3 border-b border-slate-200 dark:border-gray-700 last:border-0 ${

@@ -1,9 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Activity, Clock, Globe, Trash2, RefreshCw, BarChart3, FileText, MoreHorizontal, Zap, Shield, AlertTriangle, Lock, Unlock } from 'lucide-react';
 import ServiceCharts from './ServiceCharts';
 import { Tooltip } from './ui';
+import { HeartbeatBarCompact, UptimePercentages } from './HeartbeatBar';
 
 function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic, isCompact, onViewStatistics, onViewHistory }) {
+  const [recentLogs, setRecentLogs] = useState([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  // Cargar logs recientes para el HeartbeatBar
+  useEffect(() => {
+    const fetchRecentLogs = async () => {
+      if (!service?.id) return;
+      setLoadingLogs(true);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/services/${service.id}/logs?limit=50`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setRecentLogs(data.logs || []);
+        }
+      } catch (error) {
+        console.error('Error fetching logs for heartbeat:', error);
+      } finally {
+        setLoadingLogs(false);
+      }
+    };
+
+    fetchRecentLogs();
+    
+    // Refrescar cada 30 segundos
+    const interval = setInterval(fetchRecentLogs, 30000);
+    return () => clearInterval(interval);
+  }, [service?.id, service?.status]);
   const [isChecking, setIsChecking] = useState(false);
 
   const getStatusConfig = (status) => {
@@ -180,6 +211,11 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
             {service.url}
           </a>
 
+          {/* HeartbeatBar Compacto */}
+          <div className="mt-3">
+            <HeartbeatBarCompact logs={recentLogs} maxBars={20} />
+          </div>
+
           {/* Compact Metrics */}
           <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-gray-700">
             <div>
@@ -303,6 +339,17 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
             {service.description}
           </p>
         )}
+
+        {/* HeartbeatBar - Inspirado en Uptime Kuma */}
+        <div className="mb-5 p-3 rounded-xl bg-slate-50 dark:bg-gray-700/30">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-slate-500 dark:text-gray-400">
+              Historial de estado
+            </span>
+            <UptimePercentages logs={recentLogs} periods={['24h', '7d', '30d']} />
+          </div>
+          <HeartbeatBarCompact logs={recentLogs} maxBars={45} />
+        </div>
 
         {/* Modern Metrics Grid */}
         <div className="grid grid-cols-4 gap-2 mb-5">
