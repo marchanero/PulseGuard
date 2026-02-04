@@ -34,6 +34,7 @@ function App() {
   const [viewMode, setViewMode] = useState('grid');
   const [selectedService, setSelectedService] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [drawerTab, setDrawerTab] = useState('details');
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return localStorage.getItem('serviceMonitor_onboardingSeen') === null;
   });
@@ -217,22 +218,26 @@ function App() {
 
   const handleSelectServiceFromPalette = (service) => {
     setSelectedService(service);
+    setDrawerTab('details');
     setIsDrawerOpen(true);
   };
 
   const handleViewStatistics = (service) => {
-    setSelectedServiceForPage(service);
-    setCurrentPage('statistics');
+    setSelectedService(service);
+    setDrawerTab('statistics');
+    setIsDrawerOpen(true);
   };
 
   const handleViewHistory = (service) => {
-    setSelectedServiceForPage(service);
-    setCurrentPage('history');
+    setSelectedService(service);
+    setDrawerTab('history');
+    setIsDrawerOpen(true);
   };
 
   const handleViewDetails = (service) => {
-    setSelectedServiceForPage(service);
-    setCurrentPage('details');
+    setSelectedService(service);
+    setDrawerTab('details');
+    setIsDrawerOpen(true);
   };
 
   const handleBackToDashboard = () => {
@@ -374,6 +379,7 @@ function App() {
                 <ServiceDrawer
                   service={selectedService}
                   isOpen={isDrawerOpen}
+                  initialTab={drawerTab}
                   onClose={() => {
                     setIsDrawerOpen(false);
                     setSelectedService(null);

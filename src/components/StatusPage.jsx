@@ -10,8 +10,13 @@ import {
   Wifi,
   Shield,
   RefreshCw,
-  ExternalLink
+  ExternalLink,
+  BarChart3,
+  FileText,
+  X
 } from 'lucide-react';
+import ServiceCharts from './ServiceCharts';
+import PerformanceChart from './PerformanceChart';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -62,7 +67,7 @@ const serviceTypeIcons = {
   SSL: Shield
 };
 
-function ServiceStatus({ service }) {
+function ServiceStatus({ service, onClick }) {
   const TypeIcon = serviceTypeIcons[service.type] || Globe;
   
   const getStatusColor = (status) => {
@@ -84,7 +89,10 @@ function ServiceStatus({ service }) {
   };
 
   return (
-    <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 hover:border-slate-300 dark:hover:border-gray-600 transition-colors">
+    <div 
+      onClick={onClick}
+      className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md transition-all cursor-pointer"
+    >
       <div className="flex items-center gap-4">
         <div className="p-2 rounded-lg bg-slate-100 dark:bg-gray-700">
           <TypeIcon className="w-5 h-5 text-slate-600 dark:text-gray-400" />
@@ -146,6 +154,20 @@ export function StatusPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [selectedService, setSelectedService] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [drawerTab, setDrawerTab] = useState('details');
+
+  const handleServiceClick = (service) => {
+    setSelectedService(service);
+    setDrawerTab('details');
+    setIsDrawerOpen(true);
+  };
+
+  const closeDrawer = () => {
+    setIsDrawerOpen(false);
+    setSelectedService(null);
+  };
 
   const fetchStatus = async () => {
     try {
@@ -300,7 +322,11 @@ export function StatusPage() {
           ) : (
             <div className="space-y-3">
               {data?.services?.map((service) => (
-                <ServiceStatus key={service.id} service={service} />
+                <ServiceStatus 
+                  key={service.id} 
+                  service={service} 
+                  onClick={() => handleServiceClick(service)}
+                />
               ))}
             </div>
           )}
@@ -338,6 +364,15 @@ export function StatusPage() {
           </div>
         </div>
       </footer>
+
+      {/* Status Drawer */}
+      <StatusDrawer 
+        service={selectedService}
+        isOpen={isDrawerOpen}
+        onClose={closeDrawer}
+        activeTab={drawerTab}
+        setActiveTab={setDrawerTab}
+      />
     </div>
   );
 }
@@ -375,4 +410,407 @@ function TimeAgo({ date }) {
   }, [date]);
 
   return <span>{text}</span>;
+}
+
+function StatusDrawer({ service, isOpen, onClose, activeTab, setActiveTab }) {
+  // Close on escape key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !service) return null;
+
+  const getStatusConfig = (status) => {
+    const configs = {
+      online: {
+        bgColor: 'bg-emerald-100 dark:bg-emerald-900/30',
+        textColor: 'text-emerald-700 dark:text-emerald-400',
+        borderColor: 'border-emerald-200 dark:border-emerald-800',
+        label: 'Operativo',
+        icon: '✓'
+      },
+      offline: {
+        bgColor: 'bg-red-100 dark:bg-red-900/30',
+        textColor: 'text-red-700 dark:text-red-400',
+        borderColor: 'border-red-200 dark:border-red-800',
+        label: 'Caído',
+        icon: '✕'
+      },
+      degraded: {
+        bgColor: 'bg-amber-100 dark:bg-amber-900/30',
+        textColor: 'text-amber-700 dark:text-amber-400',
+        borderColor: 'border-amber-200 dark:border-amber-800',
+        label: 'Degradado',
+        icon: '⚠'
+      },
+      timeout: {
+        bgColor: 'bg-orange-100 dark:bg-orange-900/30',
+        textColor: 'text-orange-700 dark:text-orange-400',
+        borderColor: 'border-orange-200 dark:border-orange-800',
+        label: 'Timeout',
+        icon: '⏱'
+      },
+      default: {
+        bgColor: 'bg-slate-100 dark:bg-slate-800',
+        textColor: 'text-slate-600 dark:text-slate-400',
+        borderColor: 'border-slate-200 dark:border-slate-700',
+        label: 'Desconocido',
+        icon: '?'
+      }
+    };
+    return configs[status] || configs.default;
+  };
+
+  const status = getStatusConfig(service.status);
+
+  const formatResponseTime = (ms) => {
+    if (!ms) return '-';
+    if (ms < 1000) return `${Math.round(ms)}ms`;
+    return `${(ms / 1000).toFixed(2)}s`;
+  };
+
+  const formatUptime = (uptime) => {
+    if (uptime === undefined || uptime === null) return '-';
+    return `${uptime.toFixed(2)}%`;
+  };
+
+  const formatDate = (date) => {
+    if (!date) return 'Nunca';
+    const d = new Date(date);
+    return d.toLocaleString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
+  const getIntervalLabel = (ms) => {
+    const seconds = ms / 1000;
+    if (seconds < 60) return `${seconds}s`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+    return `${Math.floor(seconds / 3600)}h`;
+  };
+
+  const tabs = [
+    { id: 'details', label: 'Detalles', icon: Activity },
+    { id: 'statistics', label: 'Estadísticas', icon: BarChart3 },
+    { id: 'history', label: 'Historial', icon: FileText },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-hidden">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
+
+      {/* Drawer */}
+      <div className="absolute inset-y-0 right-0 max-w-2xl w-full">
+        <div className="h-full bg-white dark:bg-gray-900 shadow-2xl flex flex-col animate-slide-in-right">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-gray-700">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${status.bgColor} ${status.textColor} border ${status.borderColor}`}>
+                <span className="text-lg font-bold">{status.icon}</span>
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">{service.name}</h2>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${status.bgColor} ${status.textColor}`}>
+                  {status.label}
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex border-b border-slate-200 dark:border-gray-700 px-6">
+            {tabs.map((tab) => {
+              const TabIcon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                      : 'border-transparent text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <TabIcon className="w-4 h-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {/* Tab: Detalles */}
+            {activeTab === 'details' && (
+              <div className="space-y-6">
+                {/* Quick Stats */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-slate-50 dark:bg-gray-800 rounded-lg p-4 text-center">
+                    <p className="text-sm text-slate-500 dark:text-gray-400 mb-1">Tiempo de respuesta</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                      {formatResponseTime(service.responseTime)}
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-gray-800 rounded-lg p-4 text-center">
+                    <p className="text-sm text-slate-500 dark:text-gray-400 mb-1">Uptime</p>
+                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                      {formatUptime(service.uptime)}
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-gray-800 rounded-lg p-4 text-center">
+                    <p className="text-sm text-slate-500 dark:text-gray-400 mb-1">Intervalo</p>
+                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {getIntervalLabel(service.checkInterval)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Service Info */}
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Información del Servicio</h3>
+                  <div className="bg-slate-50 dark:bg-gray-800 rounded-lg p-4 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 dark:text-gray-400">URL</span>
+                      <a
+                        href={service.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 max-w-xs truncate"
+                      >
+                        {service.url}
+                        <ExternalLink className="w-4 h-4 flex-shrink-0" />
+                      </a>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 dark:text-gray-400">Tipo</span>
+                      <span className="font-medium text-slate-900 dark:text-white capitalize">
+                        {service.type || 'HTTP'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 dark:text-gray-400">Estado</span>
+                      <span className={`font-medium ${status.textColor}`}>
+                        {status.label}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 dark:text-gray-400">Última verificación</span>
+                      <span className="text-slate-900 dark:text-white">{formatDate(service.lastChecked)}</span>
+                    </div>
+                    {service.description && (
+                      <div className="pt-3 border-t border-slate-200 dark:border-gray-700">
+                        <span className="text-slate-500 dark:text-gray-400 block mb-1">Descripción</span>
+                        <p className="text-slate-900 dark:text-white">{service.description}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Uptime Bar */}
+                <div className="bg-slate-50 dark:bg-gray-800 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Disponibilidad</h3>
+                    <span className="text-lg font-bold text-emerald-600">{formatUptime(service.uptime)}</span>
+                  </div>
+                  <div className="w-full h-3 bg-slate-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-emerald-500 transition-all duration-500"
+                      style={{ width: `${Math.min(service.uptime || 100, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tab: Estadísticas */}
+            {activeTab === 'statistics' && (
+              <div className="space-y-6">
+                {/* Quick Stats */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-slate-50 dark:bg-gray-800 rounded-lg p-4 text-center">
+                    <p className="text-sm text-slate-500 dark:text-gray-400 mb-1">Tiempo de respuesta</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                      {formatResponseTime(service.responseTime)}
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-gray-800 rounded-lg p-4 text-center">
+                    <p className="text-sm text-slate-500 dark:text-gray-400 mb-1">Uptime</p>
+                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                      {formatUptime(service.uptime)}
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-gray-800 rounded-lg p-4 text-center">
+                    <p className="text-sm text-slate-500 dark:text-gray-400 mb-1">Intervalo</p>
+                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {getIntervalLabel(service.checkInterval)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Performance Chart */}
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Rendimiento en el Tiempo</h3>
+                  <PerformanceChart serviceId={service.id} />
+                </div>
+
+                {/* Status Distribution Charts */}
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Distribución de Estado</h3>
+                  <ServiceCharts logs={service.logs} uptime={service.uptime} />
+                </div>
+
+                {/* Additional Stats */}
+                {service.logs && service.logs.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Resumen de Monitoreo</h3>
+                    <div className="bg-slate-50 dark:bg-gray-800 rounded-lg p-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-slate-500 dark:text-gray-400">Total de checks</p>
+                          <p className="text-xl font-bold text-slate-900 dark:text-white">{service.logs.length}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-500 dark:text-gray-400">Checks exitosos</p>
+                          <p className="text-xl font-bold text-emerald-600">
+                            {service.logs.filter(l => l.status === 'online').length}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-500 dark:text-gray-400">Checks fallidos</p>
+                          <p className="text-xl font-bold text-red-600">
+                            {service.logs.filter(l => l.status === 'offline').length}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-500 dark:text-gray-400">Timeouts</p>
+                          <p className="text-xl font-bold text-orange-600">
+                            {service.logs.filter(l => l.status === 'timeout').length}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab: Historial */}
+            {activeTab === 'history' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                    Historial de Verificaciones
+                  </h3>
+                  {service.logs && (
+                    <span className="text-xs text-slate-500 dark:text-gray-400">
+                      {service.logs.length} registros
+                    </span>
+                  )}
+                </div>
+
+                {!service.logs || service.logs.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Clock className="w-16 h-16 text-slate-300 dark:text-gray-600 mb-4" />
+                    <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
+                      Sin historial
+                    </h4>
+                    <p className="text-slate-500 dark:text-gray-400 max-w-sm">
+                      Aún no hay registros de verificación para este servicio.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-slate-50 dark:bg-gray-800 rounded-lg overflow-hidden">
+                    <div className="divide-y divide-slate-200 dark:divide-gray-700">
+                      {service.logs.map((log, idx) => {
+                        const logStatus = getStatusConfig(log.status);
+                        return (
+                          <div
+                            key={idx}
+                            className={`px-4 py-3 ${
+                              log.status === 'online'
+                                ? 'bg-emerald-50/50 dark:bg-emerald-900/10'
+                                : log.status === 'offline'
+                                ? 'bg-red-50/50 dark:bg-red-900/10'
+                                : log.status === 'timeout'
+                                ? 'bg-orange-50/50 dark:bg-orange-900/10'
+                                : ''
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-start gap-3">
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${logStatus.bgColor} ${logStatus.textColor} border ${logStatus.borderColor}`}>
+                                  <span className="text-sm font-bold">{logStatus.icon}</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`text-sm font-medium ${logStatus.textColor}`}>
+                                      {logStatus.label}
+                                    </span>
+                                    {log.responseTime && (
+                                      <span className="text-xs text-slate-500 dark:text-gray-400 bg-slate-200 dark:bg-gray-700 px-2 py-0.5 rounded">
+                                        {formatResponseTime(log.responseTime)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {log.message && (
+                                    <p className="text-sm text-slate-600 dark:text-gray-400 mt-1">
+                                      {log.message}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="text-xs text-slate-400 dark:text-gray-500 whitespace-nowrap flex-shrink-0">
+                                {formatDate(log.timestamp)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800/50">
+            <div className="flex justify-end">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-slate-300 dark:border-gray-600 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-600 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
