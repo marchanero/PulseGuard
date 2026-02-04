@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Plus, RefreshCw, Search, Command, Minimize2, Maximize2, Activity, LogOut, ExternalLink } from 'lucide-react';
+import { Plus, RefreshCw, Search, Command, Minimize2, Maximize2, Activity, LogOut, ExternalLink, Settings } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import { useAuth } from '../hooks/useAuth.js';
 import { NotificationBell, NotificationPanel } from './NotificationSystem';
 
-function Header({ onAddClick, onCheckAll, servicesCount, isCompact, onToggleCompact, onOpenCommandPalette }) {
+function Header({ onAddClick, onCheckAll, servicesCount, isCompact, onToggleCompact, onOpenCommandPalette, onOpenSettings }) {
   const { logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -89,6 +89,15 @@ function Header({ onAddClick, onCheckAll, servicesCount, isCompact, onToggleComp
               <ExternalLink className="w-4 h-4" />
               <span>Status</span>
             </a>
+
+            {/* Settings */}
+            <button
+              onClick={onOpenSettings}
+              className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              title="Configuración"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
 
             {/* Logout */}
             <button

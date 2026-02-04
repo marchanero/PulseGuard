@@ -1,9 +1,13 @@
-import { db, services, serviceLogs, performanceMetrics } from '../lib/db.js';
+import { db, services, serviceLogs, performanceMetrics, notificationRules, notificationChannels } from '../lib/db.js';
 import { checkService, checkSSL } from './checkTypes.js';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull, or } from 'drizzle-orm';
+import { sendNotification, notifyServiceEvent } from './notificationService.js';
 
 // Mapa para almacenar los intervalos activos
 const activeIntervals = new Map();
+
+// Mapa para almacenar el estado previo de cada servicio (para detectar cambios)
+const previousStatus = new Map();
 
 // Función para verificar un servicio y actualizar su estado
 async function monitorService(serviceId) {
@@ -117,6 +121,46 @@ async function monitorService(serviceId) {
       timestamp: now
     });
 
+    // === NOTIFICATION LOGIC ===
+    const prevStatus = previousStatus.get(serviceId);
+    const currentStatus = result.status;
+    
+    // Detect status change
+    if (prevStatus && prevStatus !== currentStatus) {
+      let event = null;
+      
+      // Determine event type
+      if (currentStatus === 'offline' || currentStatus === 'timeout') {
+        event = 'down';
+      } else if (currentStatus === 'online' && (prevStatus === 'offline' || prevStatus === 'timeout')) {
+        event = 'up';
+      } else if (currentStatus === 'degraded') {
+        event = 'degraded';
+      }
+      
+      if (event) {
+        // Trigger notifications for this service
+        await triggerNotifications(service, event, result);
+      }
+    }
+    
+    // Check SSL warnings
+    if (sslInfo && sslInfo.daysRemaining !== null) {
+      if (sslInfo.daysRemaining <= 0) {
+        await triggerNotifications(service, 'ssl_expiry', { sslInfo });
+      } else if (sslInfo.daysRemaining <= 14) {
+        // Warn 14 days before expiry (only once per day)
+        const lastSSLWarning = service.lastSSLWarning ? new Date(service.lastSSLWarning) : null;
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        if (!lastSSLWarning || lastSSLWarning < oneDayAgo) {
+          await triggerNotifications(service, 'ssl_warning', { sslInfo });
+        }
+      }
+    }
+    
+    // Update previous status
+    previousStatus.set(serviceId, currentStatus);
+
     console.log(`[Monitor] Servicio ${service.name} verificado: ${result.status} (${result.responseTime}ms)`);
   } catch (error) {
     console.error(`[Monitor] Error verificando servicio ${serviceId}:`, error.message);
@@ -194,4 +238,114 @@ export function getMonitoringStatus() {
     activeServices: activeIntervals.size,
     serviceIds: Array.from(activeIntervals.keys())
   };
+}
+
+// === NOTIFICATION HELPER FUNCTIONS ===
+
+/**
+ * Trigger notifications for a service event
+ */
+async function triggerNotifications(service, event, additionalData = {}) {
+  try {
+    // Get all applicable rules (service-specific + global)
+    const rules = await db.select({
+      rule: notificationRules,
+      channel: notificationChannels
+    })
+    .from(notificationRules)
+    .leftJoin(notificationChannels, eq(notificationRules.channelId, notificationChannels.id))
+    .where(
+      and(
+        eq(notificationRules.isEnabled, true),
+        or(
+          eq(notificationRules.serviceId, service.id),
+          isNull(notificationRules.serviceId) // Global rules
+        )
+      )
+    );
+
+    if (rules.length === 0) {
+      console.log(`[Monitor] No notification rules found for service ${service.name} event ${event}`);
+      return;
+    }
+
+    for (const { rule, channel } of rules) {
+      // Check if this rule handles this event
+      const events = JSON.parse(rule.events || '[]');
+      if (!events.includes(event)) {
+        continue;
+      }
+
+      // Check if channel is enabled
+      if (!channel || !channel.isEnabled) {
+        continue;
+      }
+
+      // Check cooldown
+      if (rule.lastNotified) {
+        const lastNotified = new Date(rule.lastNotified);
+        const cooldownMs = (rule.cooldown || 300) * 1000;
+        if (Date.now() - lastNotified.getTime() < cooldownMs) {
+          console.log(`[Monitor] Skipping notification for ${service.name} - cooldown active`);
+          continue;
+        }
+      }
+
+      // Check threshold for down events
+      if (event === 'down') {
+        const newFailures = (rule.consecutiveFailures || 0) + 1;
+        
+        // Update consecutive failures
+        await db.update(notificationRules)
+          .set({ 
+            consecutiveFailures: newFailures,
+            updatedAt: new Date().toISOString()
+          })
+          .where(eq(notificationRules.id, rule.id));
+
+        // Check if threshold met
+        if (newFailures < (rule.threshold || 1)) {
+          console.log(`[Monitor] Threshold not met for ${service.name}: ${newFailures}/${rule.threshold}`);
+          continue;
+        }
+      }
+
+      // Reset consecutive failures on recovery
+      if (event === 'up' && rule.consecutiveFailures > 0) {
+        await db.update(notificationRules)
+          .set({ 
+            consecutiveFailures: 0,
+            updatedAt: new Date().toISOString()
+          })
+          .where(eq(notificationRules.id, rule.id));
+      }
+
+      // Build notification payload
+      const payload = await notifyServiceEvent(service, event, additionalData);
+
+      // Send notification
+      console.log(`[Monitor] Sending ${event} notification for ${service.name} to ${channel.name}`);
+      
+      const result = await sendNotification({
+        ...channel,
+        config: JSON.parse(channel.config || '{}')
+      }, payload);
+
+      if (result.success) {
+        // Update last notified time
+        await db.update(notificationRules)
+          .set({ 
+            lastNotified: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          })
+          .where(eq(notificationRules.id, rule.id));
+        
+        console.log(`[Monitor] Notification sent successfully to ${channel.name}`);
+      } else {
+        console.error(`[Monitor] Failed to send notification to ${channel.name}:`, result.error);
+      }
+    }
+  } catch (error) {
+    console.error(`[Monitor] Error triggering notifications for ${service.name}:`, error.message);
+  }
 }

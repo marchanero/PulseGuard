@@ -7,6 +7,7 @@ import servicesRouter from './api/services.js';
 import authRouter, { sessionMiddleware, requireAuth } from './api/auth.js';
 import statusRouter from './api/status.js';
 import analyticsRouter from './api/analytics.js';
+import notificationsRouter from './api/notifications.js';
 import { startAllMonitoring, stopAllMonitoring } from './utils/monitor.js';
 
 // Cargar .env.local primero, luego .env
@@ -58,6 +59,7 @@ app.use('/api/status', statusRouter);
 // Rutas protegidas (requieren autenticación)
 app.use('/api/services', requireAuth, servicesRouter);
 app.use('/api/analytics', requireAuth, analyticsRouter);
+app.use('/api/notifications', requireAuth, notificationsRouter);
 
 // Ruta de health check
 app.get('/api/health', (req, res) => {
