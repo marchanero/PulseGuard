@@ -62,7 +62,7 @@ export function Register({ onSwitchToLogin }) {
 
       // Registro exitoso, cambiar a login
       onSwitchToLogin();
-    } catch (err) {
+    } catch {
       setError('Error de conexión');
       setIsLoading(false);
     }
@@ -105,6 +105,7 @@ export function Register({ onSwitchToLogin }) {
                     onChange={handleChange}
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     placeholder="usuario123"
+                    autoComplete="username"
                     required
                   />
                 </div>
@@ -150,6 +151,7 @@ export function Register({ onSwitchToLogin }) {
                   onChange={handleChange}
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="correo@ejemplo.com"
+                  autoComplete="email"
                   required
                 />
               </div>
@@ -172,6 +174,7 @@ export function Register({ onSwitchToLogin }) {
                   onChange={handleChange}
                   className="w-full pl-10 pr-12 py-3 rounded-xl border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="••••••••"
+                  autoComplete="new-password"
                   required
                   minLength={6}
                 />
@@ -206,6 +209,7 @@ export function Register({ onSwitchToLogin }) {
                   onChange={handleChange}
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="••••••••"
+                  autoComplete="new-password"
                   required
                 />
               </div>
