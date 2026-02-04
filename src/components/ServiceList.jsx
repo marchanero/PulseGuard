@@ -1,6 +1,17 @@
-import ServiceCard from './ServiceCard';
+import { memo } from 'react';
+// Usar el ServiceCard refactorizado con mejor rendimiento
+import ServiceCard from './ServiceCardRefactored';
 
-function ServiceList({ services, onDelete, onCheck, onTogglePublic, onViewDetails, isCompact, onViewStatistics, onViewHistory }) {
+const ServiceList = memo(function ServiceList({ 
+  services, 
+  onDelete, 
+  onCheck, 
+  onTogglePublic, 
+  onViewDetails, 
+  isCompact, 
+  onViewStatistics, 
+  onViewHistory 
+}) {
   if (services.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4">
@@ -47,6 +58,6 @@ function ServiceList({ services, onDelete, onCheck, onTogglePublic, onViewDetail
       ))}
     </div>
   );
-}
+});
 
 export default ServiceList;

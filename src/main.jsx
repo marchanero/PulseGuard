@@ -7,19 +7,22 @@ import { ToastProvider } from './context/ToastContext.jsx'
 import { ConfirmProvider } from './context/ConfirmContext.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { NotificationProvider } from './components/NotificationSystem.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <AuthProvider>
-      <ThemeProvider>
-        <ToastProvider>
-          <ConfirmProvider>
-            <NotificationProvider>
-              <App />
-            </NotificationProvider>
-          </ConfirmProvider>
-        </ToastProvider>
-      </ThemeProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <ConfirmProvider>
+              <NotificationProvider>
+                <App />
+              </NotificationProvider>
+            </ConfirmProvider>
+          </ToastProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   </StrictMode>,
 )
