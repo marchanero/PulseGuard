@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 
 // Tooltip personalizado para el gráfico de ping
@@ -39,6 +39,15 @@ const UptimeTooltip = ({ active, payload }) => {
 };
 
 function ServiceCharts({ logs, uptime }) {
+  // Estado para controlar si el componente está montado y visible
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    // Pequeño delay para asegurar que el contenedor tenga dimensiones
+    const timer = setTimeout(() => setIsMounted(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Preparar datos para el gráfico de ping (tiempos de respuesta)
   const pingData = useMemo(() => {
     if (!logs || logs.length === 0) return [];
@@ -90,6 +99,16 @@ function ServiceCharts({ logs, uptime }) {
     );
   }
 
+  // No renderizar charts hasta que el componente esté montado
+  if (!isMounted) {
+    return (
+      <div className="space-y-6">
+        <div className="h-48 bg-slate-100 dark:bg-gray-700/30 rounded-lg animate-pulse" />
+        <div className="h-40 bg-slate-100 dark:bg-gray-700/30 rounded-lg animate-pulse" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Gráfico de Ping */}
@@ -100,8 +119,8 @@ function ServiceCharts({ logs, uptime }) {
           </svg>
           Tiempos de respuesta (últimas 20 verificaciones)
         </h5>
-        <div className="h-48 bg-white dark:bg-gray-800 rounded-lg p-4 border border-slate-200 dark:border-gray-700">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-48 bg-white dark:bg-gray-800 rounded-lg p-4 border border-slate-200 dark:border-gray-700" style={{ minHeight: '192px' }}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
             <LineChart data={pingData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis 
@@ -138,8 +157,8 @@ function ServiceCharts({ logs, uptime }) {
           </svg>
           Distribución de estado (basado en logs)
         </h5>
-        <div className="h-40 bg-white dark:bg-gray-800 rounded-lg p-4 border border-slate-200 dark:border-gray-700">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-40 bg-white dark:bg-gray-800 rounded-lg p-4 border border-slate-200 dark:border-gray-700" style={{ minHeight: '160px' }}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={80}>
             <BarChart data={uptimeData} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
               <XAxis 

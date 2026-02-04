@@ -83,13 +83,14 @@ Diseñado con una UI/UX excepcional, dark mode por defecto, y potentes funcional
 - ✅ **Exportación**: JSON y CSV para reportes
 - ✅ **Dashboard overview**: Estadísticas agregadas
 - ✅ **Métricas de rendimiento**: Tiempos de respuesta
+- ✅ **PingChart**: Gráfico de latencia en tiempo real
 
 </td>
 </tr>
 <tr>
 <td width="50%">
 
-### 🎨 UI/UX Premium
+### 🎨 UI/UX Premium (Estilo Uptime Kuma)
 
 - ✅ **Dark/Light mode**: Cambio instantáneo con persistencia
 - ✅ **Command Palette**: Búsqueda global con `Ctrl+K`
@@ -97,6 +98,8 @@ Diseñado con una UI/UX excepcional, dark mode por defecto, y potentes funcional
 - ✅ **Vista Grid/Lista**: Adapta la visualización
 - ✅ **Modo compacto**: Para muchos servicios
 - ✅ **Animaciones fluidas**: Micro-interacciones elegantes
+- ✅ **HeartbeatBar**: Barra visual de latidos del servicio
+- ✅ **Notificaciones push**: Sistema completo con sonido
 
 </td>
 <td width="50%">
@@ -109,6 +112,10 @@ Diseñado con una UI/UX excepcional, dark mode por defecto, y potentes funcional
 - ✅ **Status page pública**: Comparte con tus usuarios
 - ✅ **Autenticación**: Sistema completo de usuarios
 - ✅ **Onboarding**: Tutorial para nuevos usuarios
+- ✅ **SSL Monitoring**: Alertas de expiración de certificados
+- ✅ **Tags/Etiquetas**: Organiza y filtra servicios
+- ✅ **Grupos de servicios**: Agrupa servicios relacionados
+- ✅ **Maintenance windows**: Programa ventanas de mantenimiento
 
 </td>
 </tr>
@@ -241,6 +248,13 @@ PulseGuard/
 │
 ├── 📂 src/                    # ⚛️ Frontend React
 │   ├── components/           # Componentes UI
+│   │   ├── HeartbeatBar.jsx  # Barra de latidos
+│   │   ├── PingChart.jsx     # Gráfico de latencia
+│   │   ├── SSLInfo.jsx       # Certificados SSL
+│   │   ├── ServiceTags.jsx   # Sistema de tags
+│   │   ├── ServiceGroup.jsx  # Grupos de servicios
+│   │   ├── NotificationSystem.jsx # Notificaciones push
+│   │   └── MaintenanceWindow.jsx  # Mantenimiento
 │   ├── context/              # Estado global
 │   ├── hooks/                # Custom hooks
 │   └── utils/                # Helpers
@@ -320,6 +334,7 @@ PulseGuard/
 
 ## 🗺️ Roadmap
 
+### ✅ Completado
 - [x] ✅ Monitorización multi-protocolo
 - [x] ✅ Dark/Light mode
 - [x] ✅ Command Palette
@@ -327,10 +342,18 @@ PulseGuard/
 - [x] ✅ Status page pública
 - [x] ✅ Métricas y analytics
 - [x] ✅ Drizzle ORM + TursoDB
+- [x] ✅ SSL Certificate monitoring
+- [x] ✅ Tags y grupos de servicios
+- [x] ✅ Notificaciones push del navegador
+- [x] ✅ Maintenance windows
+- [x] ✅ HeartbeatBar estilo Uptime Kuma
+- [x] ✅ PingChart con estadísticas en tiempo real
+
+### 🔜 Próximamente
 - [ ] 🔜 Notificaciones (Slack, Discord, Email)
 - [ ] 🔜 Checks desde múltiples regiones
-- [ ] 🔜 SSL Certificate monitoring
 - [ ] 🔜 Webhooks personalizados
+- [ ] 🔜 Integración con GitHub
 
 ---
 

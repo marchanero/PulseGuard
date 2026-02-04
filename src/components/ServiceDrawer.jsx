@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import ServiceCharts from './ServiceCharts';
 import PerformanceChart from './PerformanceChart';
 import HeartbeatBar, { UptimePercentages } from './HeartbeatBar';
 import SSLInfo from './SSLInfo';
+import { PingChart, PingStats, LatencyIndicator } from './PingChart';
+import { MaintenanceBadge, MaintenancePanel, getNextMaintenance } from './MaintenanceWindow';
 
 function ServiceDrawer({ service, isOpen, onClose }) {
   const [logs, setLogs] = useState([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview'); // overview, maintenance, settings
+  const [maintenances, setMaintenances] = useState([]);
 
   // Cargar logs para el HeartbeatBar
   useEffect(() => {
@@ -33,6 +37,29 @@ function ServiceDrawer({ service, isOpen, onClose }) {
       fetchLogs();
     }
   }, [service?.id, isOpen]);
+
+  // Prepare data for PingChart
+  const pingChartData = useMemo(() => {
+    return logs.map(log => ({
+      timestamp: log.timestamp,
+      responseTime: log.responseTime,
+      status: log.status
+    })).reverse(); // Older to newer
+  }, [logs]);
+
+  // Get next/current maintenance
+  const currentMaintenance = useMemo(() => {
+    return getNextMaintenance(maintenances);
+  }, [maintenances]);
+
+  // Handle maintenance CRUD
+  const handleAddMaintenance = (maintenance) => {
+    setMaintenances(prev => [...prev, maintenance]);
+  };
+
+  const handleDeleteMaintenance = (maintenance) => {
+    setMaintenances(prev => prev.filter(m => m.id !== maintenance.id));
+  };
 
   // Close on escape key
   useEffect(() => {
@@ -144,9 +171,12 @@ function ServiceDrawer({ service, isOpen, onClose }) {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">{service.name}</h2>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${status.bgColor} ${status.textColor}`}>
-                  {status.label}
-                </span>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${status.bgColor} ${status.textColor}`}>
+                    {status.label}
+                  </span>
+                  {currentMaintenance && <MaintenanceBadge maintenance={currentMaintenance} size="small" />}
+                </div>
               </div>
             </div>
             <button
@@ -159,8 +189,50 @@ function ServiceDrawer({ service, isOpen, onClose }) {
             </button>
           </div>
 
+          {/* Tabs */}
+          <div className="flex border-b border-slate-200 dark:border-gray-700 px-6">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                activeTab === 'overview'
+                  ? 'border-slate-900 dark:border-white text-slate-900 dark:text-white'
+                  : 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-300'
+              }`}
+            >
+              Visión general
+            </button>
+            <button
+              onClick={() => setActiveTab('performance')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                activeTab === 'performance'
+                  ? 'border-slate-900 dark:border-white text-slate-900 dark:text-white'
+                  : 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-300'
+              }`}
+            >
+              Rendimiento
+            </button>
+            <button
+              onClick={() => setActiveTab('maintenance')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                activeTab === 'maintenance'
+                  ? 'border-slate-900 dark:border-white text-slate-900 dark:text-white'
+                  : 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-300'
+              }`}
+            >
+              Mantenimiento
+              {maintenances.length > 0 && (
+                <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-slate-200 dark:bg-gray-700 rounded-full">
+                  {maintenances.length}
+                </span>
+              )}
+            </button>
+          </div>
+
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* Overview Tab */}
+            {activeTab === 'overview' && (
+              <>
             {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-slate-50 dark:bg-gray-800 rounded-lg p-4 text-center">
@@ -303,6 +375,75 @@ function ServiceDrawer({ service, isOpen, onClose }) {
                   </div>
                 </div>
               </div>
+            )}
+            </>
+            )}
+
+            {/* Performance Tab */}
+            {activeTab === 'performance' && (
+              <>
+                {/* Ping Chart */}
+                <div className="bg-slate-50 dark:bg-gray-800 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                      Latencia en tiempo real
+                    </h3>
+                    <LatencyIndicator 
+                      responseTime={service.responseTime} 
+                      showLabel={true}
+                      size="small"
+                    />
+                  </div>
+                  {loadingLogs ? (
+                    <div className="h-32 bg-slate-200 dark:bg-gray-700 rounded animate-pulse" />
+                  ) : (
+                    <>
+                      <PingChart 
+                        data={pingChartData} 
+                        height={180}
+                        showAxis={true}
+                        showGrid={true}
+                        animated={true}
+                        color="emerald"
+                      />
+                      <div className="mt-4">
+                        <PingStats data={pingChartData} />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Performance Chart */}
+                <PerformanceChart serviceId={service.id} />
+
+                {/* SSL Info */}
+                {service.url?.startsWith('https://') && (service.sslExpiryDate || service.sslDaysRemaining !== undefined) && (
+                  <div className="bg-slate-50 dark:bg-gray-800 rounded-xl p-4">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Certificado SSL</h3>
+                    <SSLInfo 
+                      sslExpiryDate={service.sslExpiryDate} 
+                      sslDaysRemaining={service.sslDaysRemaining}
+                      variant="full"
+                    />
+                  </div>
+                )}
+
+                {/* Status Distribution */}
+                <div className="bg-slate-50 dark:bg-gray-800 rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Distribución de Estado</h3>
+                  <ServiceCharts logs={logs.length > 0 ? logs : service.logs} uptime={service.uptime} />
+                </div>
+              </>
+            )}
+
+            {/* Maintenance Tab */}
+            {activeTab === 'maintenance' && (
+              <MaintenancePanel
+                serviceId={service.id}
+                maintenances={maintenances}
+                onAdd={handleAddMaintenance}
+                onDelete={handleDeleteMaintenance}
+              />
             )}
           </div>
 

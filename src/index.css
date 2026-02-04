@@ -289,3 +289,76 @@ body {
 .animate-heartbeat-bounce {
   animation: heartbeatBounce 0.5s ease-in-out;
 }
+
+/* Notification Bell wiggle animation */
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  15% {
+    transform: rotate(15deg);
+  }
+  30% {
+    transform: rotate(-15deg);
+  }
+  45% {
+    transform: rotate(10deg);
+  }
+  60% {
+    transform: rotate(-10deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+  90% {
+    transform: rotate(-5deg);
+  }
+}
+
+.animate-wiggle {
+  animation: wiggle 0.8s ease-in-out;
+}
+
+/* Ping chart line draw animation */
+@keyframes drawLine {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-draw-line {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: drawLine 1s ease-out forwards;
+}
+
+/* Maintenance progress bar */
+@keyframes progress {
+  from {
+    width: 0%;
+  }
+}
+
+.animate-progress {
+  animation: progress 1s ease-out;
+}
+
+/* Skeleton loading animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, 
+    transparent 25%, 
+    rgba(255,255,255,0.3) 50%, 
+    transparent 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
