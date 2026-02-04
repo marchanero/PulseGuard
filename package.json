@@ -23,7 +23,6 @@
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",
-    "@prisma/client": "^5.22.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dns-socket": "^4.2.2",
@@ -33,7 +32,6 @@
     "express-session": "^1.19.0",
     "lucide-react": "^0.563.0",
     "ping": "^1.0.0",
-    "prisma": "^5.22.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.0",

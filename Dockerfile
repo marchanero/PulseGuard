@@ -7,19 +7,22 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instalar dependencias
-RUN npm ci
+RUN npm ci --only=production=false
 
 # Copiar el resto del código
 COPY . .
 
-# Generar Prisma Client
-RUN npx prisma generate
-
 # Construir el frontend
 RUN npm run build
+
+# Limpiar devDependencies para reducir tamaño de imagen
+RUN npm prune --production
 
 # Exponer el puerto
 EXPOSE 3001
 
+# Variable de entorno para producción
+ENV NODE_ENV=production
+
 # Comando para iniciar
-CMD ["npm", "start"]
+CMD ["node", "server/index.js"]

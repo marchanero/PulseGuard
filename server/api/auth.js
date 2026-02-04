@@ -10,24 +10,48 @@ dotenv.config();
 
 const router = express.Router();
 
+// Validar SESSION_SECRET en producción
+const getSessionSecret = () => {
+  const secret = process.env.SESSION_SECRET;
+  if (process.env.NODE_ENV === 'production' && (!secret || secret === 'default-secret-change-this')) {
+    console.error('ERROR: SESSION_SECRET debe estar configurado en producción');
+    console.error('Ejecuta: fly secrets set SESSION_SECRET="$(openssl rand -base64 32)"');
+    return 'INSECURE-CHANGE-ME-' + Date.now();
+  }
+  return secret || 'dev-secret-key-local-only';
+};
+
 // Configuración de cookies optimizada para producción
+// sameSite: 'none' + secure: true es necesario para cross-site cookies
+// Pero si el frontend y backend están en el mismo dominio, usar 'lax' es mejor
 const getCookieOptions = () => {
   const isProduction = process.env.NODE_ENV === 'production';
+  
+  if (isProduction) {
+    return {
+      secure: true,           // Requerido para HTTPS
+      httpOnly: true,         // No accesible via JavaScript
+      maxAge: 24 * 60 * 60 * 1000, // 24 horas
+      sameSite: 'lax',        // 'lax' funciona mejor para mismo dominio en Fly.io
+    };
+  }
+  
   return {
-    secure: isProduction,
+    secure: false,
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 horas
-    sameSite: isProduction ? 'none' : 'lax'
+    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: 'lax'
   };
 };
 
 // Middleware de sesión con configuración optimizada
 export const sessionMiddleware = session({
-  secret: process.env.SESSION_SECRET || 'default-secret-change-this',
+  secret: getSessionSecret(),
   resave: false,
   saveUninitialized: false,
   cookie: getCookieOptions(),
-  name: 'pulseguard.sid'
+  name: 'pulseguard.sid',
+  proxy: process.env.NODE_ENV === 'production'  // Confiar en proxy de Fly.io
 });
 
 // Middleware para verificar autenticación
