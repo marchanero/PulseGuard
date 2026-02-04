@@ -13,7 +13,12 @@ import {
   ExternalLink,
   BarChart3,
   FileText,
-  X
+  X,
+  Wrench,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  TrendingUp
 } from 'lucide-react';
 import ServiceCharts from './ServiceCharts';
 import PerformanceChart from './PerformanceChart';
@@ -162,6 +167,13 @@ export function StatusPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerTab, setDrawerTab] = useState('details');
   const [serviceLogs, setServiceLogs] = useState({});
+  
+  // Nuevos estados para incidentes, mantenimientos e histórico
+  const [incidents, setIncidents] = useState(null);
+  const [maintenance, setMaintenance] = useState(null);
+  const [history, setHistory] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyDays, setHistoryDays] = useState(90);
 
   const handleServiceClick = (service) => {
     setSelectedService(service);
@@ -214,8 +226,49 @@ export function StatusPage() {
     }
   };
 
+  // Cargar incidentes
+  const fetchIncidents = async () => {
+    try {
+      const response = await fetch(`${API_URL}/status/incidents`);
+      if (response.ok) {
+        const data = await response.json();
+        setIncidents(data);
+      }
+    } catch (err) {
+      console.error('Error fetching incidents:', err);
+    }
+  };
+
+  // Cargar mantenimientos
+  const fetchMaintenance = async () => {
+    try {
+      const response = await fetch(`${API_URL}/status/maintenance`);
+      if (response.ok) {
+        const data = await response.json();
+        setMaintenance(data);
+      }
+    } catch (err) {
+      console.error('Error fetching maintenance:', err);
+    }
+  };
+
+  // Cargar histórico
+  const fetchHistory = async (days = 90) => {
+    try {
+      const response = await fetch(`${API_URL}/status/history?days=${days}`);
+      if (response.ok) {
+        const data = await response.json();
+        setHistory(data);
+      }
+    } catch (err) {
+      console.error('Error fetching history:', err);
+    }
+  };
+
   useEffect(() => {
     fetchStatus();
+    fetchIncidents();
+    fetchMaintenance();
     // Actualizar cada 30 segundos
     const interval = setInterval(fetchStatus, 30000);
     return () => clearInterval(interval);
@@ -363,6 +416,123 @@ export function StatusPage() {
           )}
         </div>
 
+        {/* Mantenimientos Activos */}
+        {maintenance?.active?.length > 0 && (
+          <div className="mt-8 p-6 bg-amber-50 dark:bg-amber-900/20 rounded-xl border-2 border-amber-200 dark:border-amber-800">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-800">
+                <Wrench className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-amber-800 dark:text-amber-300">
+                Mantenimiento en Curso
+              </h3>
+            </div>
+            <div className="space-y-3">
+              {maintenance.active.map((m) => (
+                <div key={m.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-amber-200 dark:border-amber-700">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-medium text-slate-900 dark:text-white">{m.title}</h4>
+                      {m.description && (
+                        <p className="text-sm text-slate-600 dark:text-gray-400 mt-1">{m.description}</p>
+                      )}
+                      {m.service && (
+                        <span className="inline-flex items-center px-2 py-0.5 mt-2 rounded text-xs font-medium bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300">
+                          {m.service.name}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right text-sm text-slate-500 dark:text-gray-400">
+                      <p>Hasta: {new Date(m.endTime).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Mantenimientos Programados */}
+        {maintenance?.upcoming?.length > 0 && (
+          <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-800">
+                <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-300">
+                Mantenimientos Programados
+              </h3>
+            </div>
+            <div className="space-y-3">
+              {maintenance.upcoming.slice(0, 5).map((m) => (
+                <div key={m.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-medium text-slate-900 dark:text-white">{m.title}</h4>
+                      {m.service && (
+                        <span className="inline-flex items-center px-2 py-0.5 mt-1 rounded text-xs font-medium bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300">
+                          {m.service.name}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right text-sm text-slate-500 dark:text-gray-400">
+                      <p>{new Date(m.startTime).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                      <p className="text-xs">→ {new Date(m.endTime).toLocaleString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Incidentes Recientes */}
+        {incidents?.totalIncidents > 0 && (
+          <div className="mt-8 p-6 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30">
+                  <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                    Incidentes Recientes
+                  </h3>
+                  <p className="text-sm text-slate-500 dark:text-gray-400">Últimos 7 días</p>
+                </div>
+              </div>
+              <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                {incidents.totalIncidents} incidentes
+              </span>
+            </div>
+            <div className="space-y-4">
+              {Object.entries(incidents.incidentsByDay || {}).slice(0, 5).map(([date, dayIncidents]) => (
+                <div key={date} className="border-l-2 border-slate-200 dark:border-gray-700 pl-4">
+                  <h4 className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+                    {new Date(date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}
+                  </h4>
+                  <div className="space-y-2">
+                    {dayIncidents.slice(0, 3).map((incident, idx) => (
+                      <div key={idx} className="flex items-center gap-3 text-sm">
+                        <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                        <span className="font-medium text-slate-900 dark:text-white">{incident.service}</span>
+                        <span className="text-slate-500 dark:text-gray-400">
+                          {new Date(incident.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    ))}
+                    {dayIncidents.length > 3 && (
+                      <p className="text-xs text-slate-500 dark:text-gray-400">
+                        +{dayIncidents.length - 3} más
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Uptime general */}
         {data?.summary?.averageUptime && (
           <div className="mt-8 p-6 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700">
@@ -380,6 +550,122 @@ export function StatusPage() {
             </p>
           </div>
         )}
+
+        {/* Histórico de 90 días */}
+        <div className="mt-8">
+          <button
+            onClick={() => {
+              if (!showHistory) fetchHistory(historyDays);
+              setShowHistory(!showHistory);
+            }}
+            className="w-full p-4 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 flex items-center justify-between hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold text-slate-900 dark:text-white">
+                  Histórico de Uptime
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-gray-400">Ver disponibilidad de los últimos 90 días</p>
+              </div>
+            </div>
+            {showHistory ? (
+              <ChevronUp className="w-5 h-5 text-slate-400" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-slate-400" />
+            )}
+          </button>
+
+          {showHistory && history && (
+            <div className="mt-4 p-6 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700">
+              {/* Selector de días */}
+              <div className="flex items-center justify-between mb-6">
+                <h4 className="font-medium text-slate-900 dark:text-white">Uptime por día</h4>
+                <select
+                  value={historyDays}
+                  onChange={(e) => {
+                    const days = parseInt(e.target.value);
+                    setHistoryDays(days);
+                    fetchHistory(days);
+                  }}
+                  className="px-3 py-1.5 text-sm border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white"
+                >
+                  <option value={7}>Últimos 7 días</option>
+                  <option value={30}>Últimos 30 días</option>
+                  <option value={90}>Últimos 90 días</option>
+                </select>
+              </div>
+
+              {/* Gráfico de barras de uptime diario */}
+              <div className="mb-6">
+                <div className="flex items-end gap-0.5 h-24 overflow-x-auto pb-2">
+                  {history.globalDailyUptime?.map((day, idx) => {
+                    const height = Math.max((day.uptime / 100) * 100, 2);
+                    const color = day.uptime >= 99.9 ? 'bg-emerald-500' :
+                                  day.uptime >= 99 ? 'bg-emerald-400' :
+                                  day.uptime >= 95 ? 'bg-yellow-400' :
+                                  'bg-red-500';
+                    return (
+                      <div
+                        key={day.date}
+                        className="flex-shrink-0 w-2 relative group"
+                        title={`${day.date}: ${day.uptime.toFixed(2)}%`}
+                      >
+                        <div
+                          className={`w-full ${color} rounded-t transition-all hover:opacity-80`}
+                          style={{ height: `${height}%` }}
+                        />
+                        {/* Tooltip */}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10">
+                          <div className="bg-slate-900 dark:bg-gray-700 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                            {new Date(day.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}: {day.uptime.toFixed(2)}%
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex justify-between text-xs text-slate-500 dark:text-gray-400 mt-1">
+                  <span>{history.startDate}</span>
+                  <span>{history.endDate}</span>
+                </div>
+              </div>
+
+              {/* Uptime por servicio */}
+              <div className="space-y-3">
+                <h4 className="font-medium text-slate-900 dark:text-white text-sm">Uptime por servicio ({historyDays} días)</h4>
+                {history.serviceHistory?.map((sh) => (
+                  <div key={sh.service.id} className="flex items-center gap-4">
+                    <span className="text-sm text-slate-700 dark:text-gray-300 w-32 truncate" title={sh.service.name}>
+                      {sh.service.name}
+                    </span>
+                    <div className="flex-1 h-2 bg-slate-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all ${
+                          sh.periodUptime >= 99.9 ? 'bg-emerald-500' :
+                          sh.periodUptime >= 99 ? 'bg-emerald-400' :
+                          sh.periodUptime >= 95 ? 'bg-yellow-400' :
+                          'bg-red-500'
+                        }`}
+                        style={{ width: `${Math.min(sh.periodUptime, 100)}%` }}
+                      />
+                    </div>
+                    <span className={`text-sm font-medium w-16 text-right ${
+                      sh.periodUptime >= 99.9 ? 'text-emerald-600 dark:text-emerald-400' :
+                      sh.periodUptime >= 99 ? 'text-emerald-500' :
+                      sh.periodUptime >= 95 ? 'text-yellow-600 dark:text-yellow-400' :
+                      'text-red-600 dark:text-red-400'
+                    }`}>
+                      {sh.periodUptime.toFixed(2)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </main>
 
       {/* Footer */}

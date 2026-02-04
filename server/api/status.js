@@ -1,6 +1,6 @@
 import express from 'express';
-import { db, services as serviceTable, serviceLogs as serviceLogTable } from '../lib/db.js';
-import { eq, desc, gte, sql, and } from 'drizzle-orm';
+import { db, services as serviceTable, serviceLogs as serviceLogTable, maintenanceWindows } from '../lib/db.js';
+import { eq, desc, gte, lte, sql, and } from 'drizzle-orm';
 
 const router = express.Router();
 
@@ -164,6 +164,178 @@ router.get('/incidents', rateLimitMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error al obtener incidentes:', error);
     res.status(500).json({ error: 'Error al obtener incidentes' });
+  }
+});
+
+// Obtener mantenimientos activos y programados (público)
+router.get('/maintenance', rateLimitMiddleware, async (req, res) => {
+  try {
+    const now = new Date().toISOString();
+    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    
+    // Mantenimientos activos (ahora mismo)
+    const activeMaintenanceResults = await db.select({
+      window: maintenanceWindows,
+      service: serviceTable
+    })
+    .from(maintenanceWindows)
+    .leftJoin(serviceTable, eq(maintenanceWindows.serviceId, serviceTable.id))
+    .where(and(
+      lte(maintenanceWindows.startTime, now),
+      gte(maintenanceWindows.endTime, now),
+      eq(maintenanceWindows.isActive, true)
+    ))
+    .orderBy(desc(maintenanceWindows.startTime));
+    
+    // Mantenimientos programados (próximos 30 días)
+    const upcomingMaintenanceResults = await db.select({
+      window: maintenanceWindows,
+      service: serviceTable
+    })
+    .from(maintenanceWindows)
+    .leftJoin(serviceTable, eq(maintenanceWindows.serviceId, serviceTable.id))
+    .where(and(
+      gte(maintenanceWindows.startTime, now),
+      lte(maintenanceWindows.startTime, thirtyDaysFromNow),
+      eq(maintenanceWindows.isActive, true)
+    ))
+    .orderBy(maintenanceWindows.startTime);
+    
+    const formatWindow = (r) => ({
+      id: r.window.id,
+      title: r.window.title,
+      description: r.window.description,
+      startTime: r.window.startTime,
+      endTime: r.window.endTime,
+      isRecurring: Boolean(r.window.isRecurring),
+      service: r.service ? {
+        id: r.service.id,
+        name: r.service.name,
+        type: r.service.type
+      } : null
+    });
+    
+    res.json({
+      active: activeMaintenanceResults.map(formatWindow),
+      upcoming: upcomingMaintenanceResults.map(formatWindow),
+      hasActiveMaintenances: activeMaintenanceResults.length > 0
+    });
+  } catch (error) {
+    console.error('Error al obtener mantenimientos:', error);
+    res.status(500).json({ error: 'Error al obtener mantenimientos' });
+  }
+});
+
+// Obtener histórico de uptime (90 días)
+router.get('/history', rateLimitMiddleware, async (req, res) => {
+  try {
+    const days = Math.min(parseInt(req.query.days) || 90, 90);
+    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    
+    // Obtener todos los servicios públicos
+    const publicServices = await db.select({
+      id: serviceTable.id,
+      name: serviceTable.name,
+      type: serviceTable.type,
+      uptime: serviceTable.uptime,
+      createdAt: serviceTable.createdAt
+    })
+    .from(serviceTable)
+    .where(and(
+      eq(serviceTable.isDeleted, false),
+      eq(serviceTable.isActive, true),
+      eq(serviceTable.isPublic, true)
+    ));
+    
+    // Para cada servicio, obtener historial de logs agrupados por día
+    const historyByService = await Promise.all(
+      publicServices.map(async (service) => {
+        const logs = await db.select({
+          timestamp: serviceLogTable.timestamp,
+          status: serviceLogTable.status,
+          responseTime: serviceLogTable.responseTime
+        })
+        .from(serviceLogTable)
+        .where(and(
+          eq(serviceLogTable.serviceId, service.id),
+          gte(serviceLogTable.timestamp, startDate.toISOString())
+        ))
+        .orderBy(serviceLogTable.timestamp);
+        
+        // Agrupar por día y calcular uptime diario
+        const dailyStats = {};
+        
+        logs.forEach(log => {
+          const date = new Date(log.timestamp).toISOString().split('T')[0];
+          if (!dailyStats[date]) {
+            dailyStats[date] = { total: 0, online: 0, avgResponseTime: 0, responseTimes: [] };
+          }
+          dailyStats[date].total++;
+          if (log.status === 'online') {
+            dailyStats[date].online++;
+          }
+          if (log.responseTime) {
+            dailyStats[date].responseTimes.push(log.responseTime);
+          }
+        });
+        
+        // Calcular promedios
+        const dailyHistory = Object.entries(dailyStats).map(([date, stats]) => ({
+          date,
+          uptime: stats.total > 0 ? (stats.online / stats.total) * 100 : 100,
+          avgResponseTime: stats.responseTimes.length > 0 
+            ? Math.round(stats.responseTimes.reduce((a, b) => a + b, 0) / stats.responseTimes.length)
+            : null,
+          checksCount: stats.total
+        })).sort((a, b) => a.date.localeCompare(b.date));
+        
+        // Calcular uptime general del período
+        const totalChecks = logs.length;
+        const onlineChecks = logs.filter(l => l.status === 'online').length;
+        const periodUptime = totalChecks > 0 ? (onlineChecks / totalChecks) * 100 : 100;
+        
+        return {
+          service: {
+            id: service.id,
+            name: service.name,
+            type: service.type
+          },
+          periodUptime: Math.round(periodUptime * 100) / 100,
+          dailyHistory
+        };
+      })
+    );
+    
+    // Calcular uptime promedio global por día
+    const allDates = new Set();
+    historyByService.forEach(s => s.dailyHistory.forEach(d => allDates.add(d.date)));
+    
+    const globalDailyUptime = Array.from(allDates).sort().map(date => {
+      const dayData = historyByService
+        .map(s => s.dailyHistory.find(d => d.date === date))
+        .filter(Boolean);
+      
+      const avgUptime = dayData.length > 0
+        ? dayData.reduce((acc, d) => acc + d.uptime, 0) / dayData.length
+        : 100;
+      
+      return {
+        date,
+        uptime: Math.round(avgUptime * 100) / 100,
+        servicesCount: dayData.length
+      };
+    });
+    
+    res.json({
+      period: `last_${days}_days`,
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: new Date().toISOString().split('T')[0],
+      globalDailyUptime,
+      serviceHistory: historyByService
+    });
+  } catch (error) {
+    console.error('Error al obtener histórico:', error);
+    res.status(500).json({ error: 'Error al obtener histórico' });
   }
 });
 
