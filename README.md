@@ -1,14 +1,15 @@
 # PulseGuard 🚀
 
-> Monitorización de servicios en tiempo real con estilo
+> Sistema de monitorización de servicios en tiempo real con una interfaz moderna y dark mode
 
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://reactjs.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38B2AC?logo=tailwind-css)](https://tailwindcss.com/)
-[![Express](https://img.shields.io/badge/Express-4-000000?logo=express)](https://expressjs.com/)
-[![Prisma](https://img.shields.io/badge/Prisma-5-2D3748?logo=prisma)](https://prisma.io/)
+[![Express](https://img.shields.io/badge/Express-5-000000?logo=express)](https://expressjs.com/)
+[![Drizzle ORM](https://img.shields.io/badge/Drizzle-0.45-FF6B35?logo=drizzle)](https://orm.drizzle.team/)
+[![TursoDB](https://img.shields.io/badge/TursoDB-LibSQL-4ADE80?logo=sqlite)](https://turso.io/)
 
-PulseGuard es una aplicación full-stack moderna para monitorizar el estado de tus servicios web en tiempo real. Con una interfaz elegante y dark mode, atajos de teclado, y un sistema de verificación automática configurable.
+PulseGuard es una aplicación full-stack moderna para monitorizar el estado de tus servicios web en tiempo real. Con una interfaz elegante, dark mode, atajos de teclado, y verificación automática configurable.
 
 ![Dashboard Preview](https://via.placeholder.com/800x400/1e293b/ffffff?text=PulseGuard+Dashboard)
 
@@ -61,9 +62,13 @@ cd PulseGuard
 npm install
 ```
 
-3. **Configurar la base de datos**
+3. **Configurar la base de datos (TursoDB)**
 ```bash
-npx prisma migrate dev
+# Crear archivo .env con las variables de entorno
+cp .env.example .env
+
+# Editar .env con tu URL de Turso
+export DATABASE_URL="libsql://tu-db.turso.io?authToken=tu-token"
 ```
 
 4. **Iniciar la aplicación**
@@ -133,35 +138,37 @@ flyctl auth token
 
 ### Variables de entorno en producción
 
-La base de datos usa [TursoDB](https://turso.io/) (libSQL) en producción. Configure el secreto en Fly.io:
+La base de datos usa [TursoDB](https://turso.io/) (libSQL) tanto en desarrollo como en producción. Configura los secretos en Fly.io:
 
 ```bash
-fly secrets set DATABASE_URL="libsql://pulseguard-marchanero.aws-eu-west-1.turso.io?authToken=TU_TOKEN"
+fly secrets set DATABASE_URL="libsql://tu-db.turso.io?authToken=TU_TOKEN"
+fly secrets set TURSO_AUTH_TOKEN="tu-auth-token"
 ```
 
 ### Base de datos
 
-- **Desarrollo:** SQLite local (`file:./prisma/dev.db`)
+- **Desarrollo:** TursoDB (libSQL) - misma configuración que producción
 - **Producción:** TursoDB (libSQL)
 
 Las migraciones se aplican automáticamente en producción.
 
-## � Estructura del Proyecto
+## 📁 Estructura del Proyecto
 
 ```
 PulseGuard/
-├── prisma/                 # Base de datos y migraciones
-│   ├── schema.prisma      # Esquema de Prisma
-│   └── migrations/        # Migraciones de la BD
-├── server/                # Backend API
-│   ├── api/              # Rutas de la API
-│   ├── utils/            # Utilidades (health checks, monitor)
-│   └── index.js          # Entry point del servidor
-├── src/                   # Frontend React
-│   ├── components/       # Componentes React
-│   ├── context/          # Contextos (tema, toast, confirm)
-│   ├── hooks/            # Custom hooks
-│   └── utils/            # Utilidades frontend
+├── drizzle/                 # Configuración y migraciones de Drizzle
+├── prisma/                  # Schema legacy de Prisma (mantenido por compatibilidad)
+│   └── migrations/        # Migraciones existentes
+├── server/                  # Backend API
+│   ├── api/               # Rutas de la API
+│   ├── lib/               # Configuración de DB y schema (Drizzle)
+│   ├── utils/             # Utilidades (health checks, monitor)
+│   └── index.js           # Entry point del servidor
+├── src/                    # Frontend React
+│   ├── components/        # Componentes React
+│   ├── context/           # Contextos (tema, toast, auth)
+│   ├── hooks/             # Custom hooks
+│   └── utils/             # Utilidades frontend
 └── package.json
 ```
 
@@ -172,11 +179,16 @@ PulseGuard/
 Crea un archivo `.env` en la raíz:
 
 ```env
-# Puerto del servidor backend
+# Backend
+SESSION_SECRET="tu-secret-session"
 PORT=3001
 
-# URL de la base de datos
-DATABASE_URL="file:./prisma/dev.db"
+# Base de datos TursoDB
+DATABASE_URL="libsql://tu-db.turso.io?authToken=TU_TOKEN"
+TURSO_AUTH_TOKEN="tu-auth-token"
+
+# Frontend
+VITE_API_URL=http://localhost:3001/api
 ```
 
 ### Intervalos de verificación
@@ -212,18 +224,20 @@ Puedes configurar el intervalo de verificación para cada servicio:
 | GET | `/api/incidents/:id` | Obtener incidente por ID |
 | PUT | `/api/incidents/:id` | Actualizar incidente |
 | DELETE | `/api/incidents/:id` | Eliminar incidente |
+| POST | `/api/auth/register` | Registrar nuevo usuario |
 | POST | `/api/auth/login` | Iniciar sesión |
 | POST | `/api/auth/logout` | Cerrar sesión |
-| GET | `/api/auth/me` | Obtener usuario actual |
+| GET | `/api/auth/check` | Verificar sesión |
 
 ## 🛣️ Roadmap
 
 ### Próximas mejoras
 - [x] **Notificaciones** - Sistema base implementado
-- [x] **Autenticación** - Sistema de login con JWT
+- [x] **Autenticación** - Sistema de registro/login con JWT
 - [x] **Status Page pública** - Página de estado para tus clientes
 - [x] **Múltiples tipos de checks** - HTTP, TCP, Ping, DNS
 - [x] **Métricas de rendimiento** - Latencia y uptime tracking
+- [x] **Drizzle ORM** - Migración desde Prisma a Drizzle
 - [ ] **SSL Certificate monitoring** - Alertas de expiración de certificados
 - [ ] **Docker** - Contenedores para fácil despliegue
 - [ ] **Webhooks** - Integración con Slack, Discord, Telegram
@@ -234,17 +248,18 @@ Consulta [`IMPROVEMENTS.md`](IMPROVEMENTS.md) para la lista completa de mejoras 
 ## 🛡️ Tecnologías
 
 ### Frontend
-- **React 18** - UI library
+- **React 19** - UI library
 - **Vite** - Build tool ultrarrápido
 - **Tailwind CSS** - Framework de estilos
 - **Lucide React** - Iconos
 - **Recharts** - Gráficos y estadísticas
 
 ### Backend
-- **Express.js** - Framework web
-- **Prisma ORM** - Base de datos
-- **TursoDB (libSQL)** - Base de datos cloud
+- **Express.js 5** - Framework web
+- **Drizzle ORM** - ORM moderno y ligero
+- **TursoDB (libSQL)** - Base de datos cloud edge
 - **Node-cron** - Tareas programadas
+- **JWT** - Autenticación basada en tokens
 
 ## 🤝 Contribuir
 
@@ -307,68 +322,6 @@ PulseGuard/
 ├── jest.setup.js                # Setup de Jest
 ├── babel.config.js              # Configuración de Babel
 └── cypress.config.js            # Configuración de Cypress
-```
-
-### Tipos de Tests
-
-#### 1. Tests de Componentes (Jest + RTL)
-
-```bash
-npm test -- Button.test.jsx
-```
-
-Tests de componentes UI con React Testing Library y jest-axe para accesibilidad.
-
-#### 2. Tests de Hooks (Jest + RTL)
-
-```bash
-npm test -- useTheme.test.js
-```
-
-Tests de hooks personalizados usando `renderHook`.
-
-#### 3. Tests de API (Jest + Supertest)
-
-```bash
-npm run test:api
-```
-
-Tests de endpoints del backend con Supertest.
-
-#### 4. Tests E2E (Cypress)
-
-```bash
-# Modo headless
-npm run test:e2e
-
-# Modo interactivo
-npm run test:e2e:open
-```
-
-Tests de flujos completos de usuario.
-
-### Cobertura de Código
-
-Para generar un reporte de cobertura:
-
-```bash
-npm run test:coverage
-```
-
-El reporte se guarda en la carpeta `coverage/`.
-
-### Accesibilidad
-
-Los tests incluyen verificaciones de accesibilidad con jest-axe:
-
-```javascript
-import { axe } from 'jest-axe';
-
-it('has no accessibility violations', async () => {
-  const { container } = render(<Component />);
-  const results = await axe(container);
-  expect(results).toHaveNoViolations();
-});
 ```
 
 ## 📝 Licencia
