@@ -24,8 +24,8 @@
 
 ## ⚙️ Funcionalidades Avanzadas
 - [ ] **Checks desde múltiples ubicaciones** (US, EU, Asia)
-- [ ] **Verificación de contenido** - buscar texto específico en la respuesta
-- [ ] **Headers personalizados** y autenticación en las peticiones
+- [x] **Verificación de contenido** - buscar texto específico en la respuesta
+- [x] **Headers personalizados** y autenticación en las peticiones
 - [x] **SSL certificate monitoring** - SSLInfo, SSLBadge con alertas visuales
 - [ ] **Dominio expiration monitoring** - alertar cuando expiren dominios
 - [x] **Tags/Etiquetas** - Organizar servicios con tags y filtrar por ellos
