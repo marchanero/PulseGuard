@@ -1,15 +1,28 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Search, Filter, LayoutGrid, List, ArrowUpDown, X } from 'lucide-react';
+import { Search, Filter, LayoutGrid, List, ArrowUpDown, X, Tag } from 'lucide-react';
 import ExportButton from './ExportButton';
+import { TagFilter } from './ServiceTags';
 
 function ServiceFilters({ services, onFilterChange, viewMode, onViewModeChange, isOpen, isCompact }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedTags, setSelectedTags] = useState([]);
   const [sortBy, setSortBy] = useState('name');
   const [showFilters, setShowFilters] = useState(isOpen || false);
 
   // Asegurar que services sea siempre un array
   const safeServices = Array.isArray(services) ? services : [];
+
+  // Extraer todos los tags únicos de los servicios
+  const allTags = useMemo(() => {
+    const tagsSet = new Set();
+    safeServices.forEach(service => {
+      if (service.tags && Array.isArray(service.tags)) {
+        service.tags.forEach(tag => tagsSet.add(tag));
+      }
+    });
+    return Array.from(tagsSet).sort();
+  }, [safeServices]);
 
   const statusOptions = [
     { value: 'all', label: 'Todos', count: safeServices.length, color: 'bg-slate-500' },
@@ -36,12 +49,21 @@ function ServiceFilters({ services, onFilterChange, viewMode, onViewModeChange, 
       const query = searchQuery.toLowerCase();
       result = result.filter(service =>
         service.name?.toLowerCase().includes(query) ||
-        service.url?.toLowerCase().includes(query)
+        service.url?.toLowerCase().includes(query) ||
+        // También buscar en tags
+        (service.tags && service.tags.some(tag => tag.toLowerCase().includes(query)))
       );
     }
 
     if (statusFilter !== 'all') {
       result = result.filter(service => service.status === statusFilter);
+    }
+
+    // Filtrar por tags seleccionados
+    if (selectedTags.length > 0) {
+      result = result.filter(service => 
+        service.tags && selectedTags.every(tag => service.tags.includes(tag))
+      );
     }
 
     result.sort((a, b) => {
@@ -64,13 +86,13 @@ function ServiceFilters({ services, onFilterChange, viewMode, onViewModeChange, 
     });
 
     return result;
-  }, [services, searchQuery, statusFilter, sortBy]);
+  }, [services, searchQuery, statusFilter, selectedTags, sortBy]);
 
   useEffect(() => {
     onFilterChange(filteredServices);
   }, [filteredServices, onFilterChange]);
 
-  const activeFiltersCount = (searchQuery ? 1 : 0) + (statusFilter !== 'all' ? 1 : 0);
+  const activeFiltersCount = (searchQuery ? 1 : 0) + (statusFilter !== 'all' ? 1 : 0) + (selectedTags.length > 0 ? 1 : 0);
   const showFiltersPanel = isOpen !== undefined ? isOpen : showFilters;
 
   if (isCompact) {
@@ -248,6 +270,20 @@ function ServiceFilters({ services, onFilterChange, viewMode, onViewModeChange, 
               </div>
             </div>
           </div>
+
+          {/* Filtro por Tags */}
+          {allTags.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-slate-100 dark:border-gray-700">
+              <label className="block text-xs font-medium text-slate-500 dark:text-gray-400 uppercase mb-2">
+                Etiquetas
+              </label>
+              <TagFilter 
+                allTags={allTags} 
+                selectedTags={selectedTags} 
+                onChange={setSelectedTags} 
+              />
+            </div>
+          )}
 
           {/* Resultados */}
           <div className="mt-4 pt-3 border-t border-slate-100 dark:border-gray-700">

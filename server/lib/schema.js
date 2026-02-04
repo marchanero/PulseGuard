@@ -19,6 +19,7 @@ export const services = sqliteTable('Service', {
   host: text('host'),
   port: integer('port'),
   description: text('description'),
+  tags: text('tags'), // JSON array of tags
   status: text('status').default('unknown'),
   responseTime: integer('responseTime'),
   uptime: real('uptime').default(100),

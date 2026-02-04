@@ -4,16 +4,15 @@ import ServiceCharts from './ServiceCharts';
 import { Tooltip } from './ui';
 import { HeartbeatBarCompact, UptimePercentages } from './HeartbeatBar';
 import { SSLBadge } from './SSLInfo';
+import ServiceTags from './ServiceTags';
 
 function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic, isCompact, onViewStatistics, onViewHistory }) {
   const [recentLogs, setRecentLogs] = useState([]);
-  const [loadingLogs, setLoadingLogs] = useState(false);
 
   // Cargar logs recientes para el HeartbeatBar
   useEffect(() => {
     const fetchRecentLogs = async () => {
       if (!service?.id) return;
-      setLoadingLogs(true);
       try {
         const token = localStorage.getItem('token');
         const response = await fetch(`/api/services/${service.id}/logs?limit=50`, {
@@ -25,8 +24,6 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
         }
       } catch (error) {
         console.error('Error fetching logs for heartbeat:', error);
-      } finally {
-        setLoadingLogs(false);
       }
     };
 
@@ -216,6 +213,13 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
             {service.url}
           </a>
 
+          {/* Tags del servicio */}
+          {service.tags && service.tags.length > 0 && (
+            <div className="mt-2">
+              <ServiceTags tags={service.tags} size="small" maxVisible={3} />
+            </div>
+          )}
+
           {/* HeartbeatBar Compacto */}
           <div className="mt-3">
             <HeartbeatBarCompact logs={recentLogs} maxBars={20} />
@@ -341,6 +345,13 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
             <Globe className="w-3.5 h-3.5" />
             <span className="truncate max-w-[220px] sm:max-w-[280px]">{service.url}</span>
           </a>
+          
+          {/* Tags del servicio */}
+          {service.tags && service.tags.length > 0 && (
+            <div className="mt-2">
+              <ServiceTags tags={service.tags} size="small" maxVisible={5} />
+            </div>
+          )}
         </div>
 
         {service.description && (

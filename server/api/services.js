@@ -17,6 +17,7 @@ router.get('/', async (req, res) => {
       host: serviceTable.host,
       port: serviceTable.port,
       description: serviceTable.description,
+      tags: serviceTable.tags,
       checkInterval: serviceTable.checkInterval,
       isActive: serviceTable.isActive,
       isPublic: serviceTable.isPublic,
@@ -45,17 +46,27 @@ router.get('/', async (req, res) => {
     .where(eq(serviceTable.isDeleted, false))
     .orderBy(desc(serviceTable.createdAt));
     
-    // Parsear los logs como JSON
+    // Parsear los logs y tags como JSON
     const parsedServices = services.map(s => {
       try {
+        let parsedTags = [];
+        if (s.tags) {
+          try {
+            parsedTags = JSON.parse(s.tags);
+          } catch (e) {
+            parsedTags = [];
+          }
+        }
         return {
           ...s,
+          tags: parsedTags,
           logs: s.logs ? JSON.parse(s.logs) : []
         };
       } catch (error) {
-        console.error('Error parsing logs for service', s.id, ':', error);
+        console.error('Error parsing data for service', s.id, ':', error);
         return {
           ...s,
+          tags: [],
           logs: []
         };
       }
@@ -127,6 +138,107 @@ router.get('/archived', async (req, res) => {
   }
 });
 
+// Obtener logs recientes de un servicio
+// IMPORTANTE: Esta ruta debe estar ANTES de /:id para que Express la reconozca correctamente
+router.get('/:id/logs', async (req, res) => {
+  try {
+    const serviceId = parseInt(req.params.id);
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200); // Máximo 200 logs
+    
+    // Verificar que el servicio existe
+    const existing = await db.select({ id: serviceTable.id }).from(serviceTable).where(eq(serviceTable.id, serviceId));
+    
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'Servicio no encontrado' });
+    }
+    
+    const logs = await db.select()
+      .from(serviceLogTable)
+      .where(eq(serviceLogTable.serviceId, serviceId))
+      .orderBy(desc(serviceLogTable.timestamp))
+      .limit(limit);
+    
+    res.json({ logs });
+  } catch (error) {
+    console.error('Error obteniendo logs del servicio:', error);
+    res.status(500).json({ error: 'Error al obtener logs', message: error.message });
+  }
+});
+
+// Obtener métricas de rendimiento históricas de un servicio
+// IMPORTANTE: Esta ruta debe estar ANTES de /:id para que Express la reconozca correctamente
+router.get('/:id/metrics', async (req, res) => {
+  try {
+    const serviceId = parseInt(req.params.id);
+    const { range = '24h' } = req.query;
+    
+    // Calcular fecha de inicio según el rango
+    const now = Date.now();
+    let startDate;
+    
+    switch (range) {
+      case '1h':
+        startDate = now - 60 * 60 * 1000;
+        break;
+      case '24h':
+        startDate = now - 24 * 60 * 60 * 1000;
+        break;
+      case '7d':
+        startDate = now - 7 * 24 * 60 * 60 * 1000;
+        break;
+      case '30d':
+        startDate = now - 30 * 24 * 60 * 60 * 1000;
+        break;
+      default:
+        startDate = now - 24 * 60 * 60 * 1000;
+    }
+    
+    const metrics = await db.select()
+      .from(performanceMetricTable)
+      .where(and(
+        eq(performanceMetricTable.serviceId, serviceId),
+        gte(performanceMetricTable.timestamp, startDate)
+      ))
+      .orderBy(asc(performanceMetricTable.timestamp));
+    
+    // Calcular estadísticas agregadas
+    const stats = {
+      total: metrics.length,
+      avgResponseTime: 0,
+      minResponseTime: 0,
+      maxResponseTime: 0,
+      uptime: 100,
+      onlineCount: 0,
+      offlineCount: 0,
+      slowCount: 0
+    };
+    
+    if (metrics.length > 0) {
+      const responseTimes = metrics.map(m => m.responseTime).filter(rt => rt > 0);
+      stats.avgResponseTime = Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length);
+      stats.minResponseTime = responseTimes.length > 0 ? Math.min(...responseTimes) : 0;
+      stats.maxResponseTime = responseTimes.length > 0 ? Math.max(...responseTimes) : 0;
+      
+      metrics.forEach(m => {
+        if (m.status === 'online') stats.onlineCount++;
+        else if (m.status === 'offline') stats.offlineCount++;
+        else if (m.status === 'slow') stats.slowCount++;
+      });
+      
+      const totalChecks = stats.onlineCount + stats.offlineCount + stats.slowCount;
+      stats.uptime = totalChecks > 0 ? ((stats.onlineCount + stats.slowCount) / totalChecks * 100).toFixed(2) : 100;
+    }
+    
+    res.json({
+      metrics,
+      stats
+    });
+  } catch (error) {
+    console.error('Error obteniendo métricas:', error);
+    res.status(500).json({ error: 'Error al obtener métricas', message: error.message });
+  }
+});
+
 // Obtener un servicio por ID
 router.get('/:id', async (req, res) => {
   try {
@@ -186,9 +298,9 @@ router.get('/:id', async (req, res) => {
 // Crear un nuevo servicio
 router.post('/', async (req, res) => {
   try {
-    const { name, type, url, host, port, description, checkInterval, isActive } = req.body;
+    const { name, type, url, host, port, description, checkInterval, isActive, isPublic, tags } = req.body;
     
-    console.log('Creando servicio:', { name, type, url, host, port });
+    console.log('Creando servicio:', { name, type, url, host, port, tags });
     
     if (!name) {
       return res.status(400).json({ error: 'El nombre es requerido' });
@@ -214,6 +326,9 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'URL o host es requerido' });
     }
     
+    // Procesar tags (convertir a JSON string si es array)
+    const tagsJson = Array.isArray(tags) ? JSON.stringify(tags) : null;
+    
     const now = Date.now();
     const newService = await db.insert(serviceTable).values({
       name,
@@ -222,8 +337,10 @@ router.post('/', async (req, res) => {
       host: host || null,
       port: port ? parseInt(port) : null,
       description: description || '',
+      tags: tagsJson,
       checkInterval: interval,
       isActive: isActive !== undefined ? isActive : true,
+      isPublic: isPublic !== undefined ? isPublic : false,
       status: 'unknown',
       uptime: 100,
       createdAt: now,
@@ -248,7 +365,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const serviceId = parseInt(req.params.id);
-    const { name, type, url, host, port, description, checkInterval, isActive, isPublic } = req.body;
+    const { name, type, url, host, port, description, checkInterval, isActive, isPublic, tags } = req.body;
     
     // Obtener el servicio actual
     const existing = await db.select().from(serviceTable).where(eq(serviceTable.id, serviceId));
@@ -279,6 +396,7 @@ router.put('/:id', async (req, res) => {
     if (host !== undefined) updateData.host = host;
     if (port !== undefined) updateData.port = port ? parseInt(port) : null;
     if (description !== undefined) updateData.description = description;
+    if (tags !== undefined) updateData.tags = Array.isArray(tags) ? JSON.stringify(tags) : null;
     if (interval) updateData.checkInterval = interval;
     if (isActive !== undefined) updateData.isActive = isActive;
     if (isPublic !== undefined) updateData.isPublic = isPublic;
@@ -591,79 +709,6 @@ router.post('/:id/toggle', async (req, res) => {
   } catch (error) {
     console.error('Error toggling servicio:', error);
     res.status(500).json({ error: 'Error al cambiar estado del servicio', message: error.message });
-  }
-});
-
-// Obtener métricas de rendimiento históricas de un servicio
-router.get('/:id/metrics', async (req, res) => {
-  try {
-    const serviceId = parseInt(req.params.id);
-    const { range = '24h' } = req.query;
-    
-    // Calcular fecha de inicio según el rango
-    const now = Date.now();
-    let startDate;
-    
-    switch (range) {
-      case '1h':
-        startDate = now - 60 * 60 * 1000;
-        break;
-      case '24h':
-        startDate = now - 24 * 60 * 60 * 1000;
-        break;
-      case '7d':
-        startDate = now - 7 * 24 * 60 * 60 * 1000;
-        break;
-      case '30d':
-        startDate = now - 30 * 24 * 60 * 60 * 1000;
-        break;
-      default:
-        startDate = now - 24 * 60 * 60 * 1000;
-    }
-    
-    const metrics = await db.select()
-      .from(performanceMetricTable)
-      .where(and(
-        eq(performanceMetricTable.serviceId, serviceId),
-        gte(performanceMetricTable.timestamp, startDate)
-      ))
-      .orderBy(asc(performanceMetricTable.timestamp));
-    
-    // Calcular estadísticas agregadas
-    const stats = {
-      total: metrics.length,
-      avgResponseTime: 0,
-      minResponseTime: 0,
-      maxResponseTime: 0,
-      uptime: 100,
-      onlineCount: 0,
-      offlineCount: 0,
-      slowCount: 0
-    };
-    
-    if (metrics.length > 0) {
-      const responseTimes = metrics.map(m => m.responseTime).filter(rt => rt > 0);
-      stats.avgResponseTime = Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length);
-      stats.minResponseTime = responseTimes.length > 0 ? Math.min(...responseTimes) : 0;
-      stats.maxResponseTime = responseTimes.length > 0 ? Math.max(...responseTimes) : 0;
-      
-      metrics.forEach(m => {
-        if (m.status === 'online') stats.onlineCount++;
-        else if (m.status === 'offline') stats.offlineCount++;
-        else if (m.status === 'slow') stats.slowCount++;
-      });
-      
-      const totalChecks = stats.onlineCount + stats.offlineCount + stats.slowCount;
-      stats.uptime = totalChecks > 0 ? ((stats.onlineCount + stats.slowCount) / totalChecks * 100).toFixed(2) : 100;
-    }
-    
-    res.json({
-      metrics,
-      stats
-    });
-  } catch (error) {
-    console.error('Error obteniendo métricas:', error);
-    res.status(500).json({ error: 'Error al obtener métricas', message: error.message });
   }
 });
 

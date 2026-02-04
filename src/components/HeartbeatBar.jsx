@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 
 /**
  * HeartbeatBar - Componente inspirado en Uptime Kuma
  * Muestra una barra visual con el historial de estados del servicio
+ * Con animaciones en tiempo real
  */
 function HeartbeatBar({ 
   logs = [], 
@@ -12,20 +13,37 @@ function HeartbeatBar({
 }) {
   const [hoveredBeat, setHoveredBeat] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [isAnimating, setIsAnimating] = useState(false);
+  const prevLogsCountRef = useRef(logs.length);
+  
+  // Detectar cuando llegan nuevos logs
+  useEffect(() => {
+    if (logs.length > prevLogsCountRef.current) {
+      // Usar requestAnimationFrame para evitar el warning de setState en effect
+      requestAnimationFrame(() => {
+        setIsAnimating(true);
+      });
+      const timer = setTimeout(() => setIsAnimating(false), 600);
+      prevLogsCountRef.current = logs.length;
+      return () => clearTimeout(timer);
+    }
+    prevLogsCountRef.current = logs.length;
+  }, [logs.length]);
 
-  // Usar useMemo en lugar de useState + useEffect para derivar beats de logs
+  // Usar useMemo para derivar beats de logs
   const beats = useMemo(() => {
     if (logs && logs.length > 0) {
       return logs.slice(0, maxBars).map((log, index) => ({
-        id: log.id || index,
+        id: log.id || `beat-${index}-${log.timestamp}`,
         status: log.status,
         responseTime: log.responseTime,
         timestamp: log.timestamp,
-        message: log.message
+        message: log.message,
+        isNew: index === 0 // El más reciente
       })).reverse(); // Mostrar más antiguos a la izquierda
     } else {
       // Si no hay logs, mostrar barras vacías
-      return Array(maxBars).fill({ status: 'empty' });
+      return Array(maxBars).fill(null).map((_, i) => ({ status: 'empty', id: `empty-${i}` }));
     }
   }, [logs, maxBars]);
 
@@ -44,6 +62,21 @@ function HeartbeatBar({
       case 'empty':
       default:
         return 'bg-slate-300 dark:bg-gray-600';
+    }
+  };
+
+  const getStatusGlow = (status) => {
+    switch (status) {
+      case 'online':
+        return 'shadow-emerald-500/50';
+      case 'offline':
+        return 'shadow-red-500/50';
+      case 'degraded':
+        return 'shadow-amber-500/50';
+      case 'timeout':
+        return 'shadow-orange-500/50';
+      default:
+        return '';
     }
   };
 
@@ -97,23 +130,36 @@ function HeartbeatBar({
 
   const sizeClasses = getSizeClasses();
 
+  // Detectar el último beat (más reciente, que está al final después del reverse)
+  const lastBeatIndex = beats.length - 1;
+
   return (
     <div className="relative">
       {/* Barra de heartbeats */}
       <div className={`flex items-center ${sizeClasses.gap} ${sizeClasses.bar}`}>
-        {beats.map((beat, index) => (
-          <div
-            key={beat.id || index}
-            className={`
-              ${sizeClasses.beat} h-full rounded-sm cursor-pointer
-              transition-all duration-150 ease-out
-              ${getStatusColor(beat.status)}
-              ${beat.status !== 'empty' ? 'hover:scale-110 hover:shadow-md' : ''}
-            `}
-            onMouseEnter={(e) => handleMouseEnter(e, beat)}
-            onMouseLeave={handleMouseLeave}
-          />
-        ))}
+        {beats.map((beat, index) => {
+          const isLastBeat = index === lastBeatIndex && beat.status !== 'empty';
+          const shouldAnimate = isLastBeat && isAnimating;
+          
+          return (
+            <div
+              key={beat.id || index}
+              className={`
+                ${sizeClasses.beat} h-full rounded-sm cursor-pointer
+                transition-all duration-300 ease-out
+                ${getStatusColor(beat.status)}
+                ${beat.status !== 'empty' ? 'hover:scale-110 hover:shadow-md' : ''}
+                ${shouldAnimate ? `animate-heartbeat-bounce shadow-lg ${getStatusGlow(beat.status)}` : ''}
+                ${isLastBeat && beat.status !== 'empty' ? 'ring-1 ring-white/30' : ''}
+              `}
+              style={{
+                animationDelay: `${index * 10}ms`,
+              }}
+              onMouseEnter={(e) => handleMouseEnter(e, beat)}
+              onMouseLeave={handleMouseLeave}
+            />
+          );
+        })}
       </div>
 
       {/* Tooltip */}
@@ -155,10 +201,26 @@ function HeartbeatBar({
 }
 
 /**
- * HeartbeatBarCompact - Versión compacta para tarjetas
+ * HeartbeatBarCompact - Versión compacta para tarjetas con animación
  */
 export function HeartbeatBarCompact({ logs = [], maxBars = 30 }) {
-  const processedLogs = logs.slice(0, maxBars).reverse();
+  const [isAnimating, setIsAnimating] = useState(false);
+  const prevLogsCountRef = useRef(logs.length);
+  
+  const processedLogs = useMemo(() => logs.slice(0, maxBars).reverse(), [logs, maxBars]);
+  
+  // Detectar cuando llegan nuevos logs
+  useEffect(() => {
+    if (logs.length > prevLogsCountRef.current) {
+      requestAnimationFrame(() => {
+        setIsAnimating(true);
+      });
+      const timer = setTimeout(() => setIsAnimating(false), 800);
+      prevLogsCountRef.current = logs.length;
+      return () => clearTimeout(timer);
+    }
+    prevLogsCountRef.current = logs.length;
+  }, [logs.length]);
   
   const getStatusColor = (status) => {
     switch (status) {
@@ -170,29 +232,52 @@ export function HeartbeatBarCompact({ logs = [], maxBars = 30 }) {
     }
   };
 
+  const getStatusGlow = (status) => {
+    switch (status) {
+      case 'online': return 'shadow-emerald-400';
+      case 'offline': return 'shadow-red-400';
+      case 'degraded': return 'shadow-amber-400';
+      case 'timeout': return 'shadow-orange-400';
+      default: return '';
+    }
+  };
+
   if (!logs || logs.length === 0) {
     return (
       <div className="flex items-center gap-[2px] h-3">
         {Array(maxBars).fill(null).map((_, i) => (
-          <div key={i} className="w-1 h-full rounded-sm bg-slate-200 dark:bg-gray-700" />
+          <div key={i} className="w-1 h-full rounded-sm bg-slate-200 dark:bg-gray-700 animate-pulse" style={{ animationDelay: `${i * 50}ms` }} />
         ))}
       </div>
     );
   }
 
+  const emptyBarsCount = Math.max(0, maxBars - processedLogs.length);
+  const lastIndex = processedLogs.length - 1;
+
   return (
     <div className="flex items-center gap-[2px] h-3">
       {/* Rellenar con barras vacías si no hay suficientes logs */}
-      {Array(Math.max(0, maxBars - processedLogs.length)).fill(null).map((_, i) => (
+      {Array(emptyBarsCount).fill(null).map((_, i) => (
         <div key={`empty-${i}`} className="w-1 h-full rounded-sm bg-slate-200 dark:bg-gray-700" />
       ))}
-      {processedLogs.map((log, index) => (
-        <div
-          key={log.id || index}
-          className={`w-1 h-full rounded-sm ${getStatusColor(log.status)}`}
-          title={`${log.status} - ${log.responseTime ? log.responseTime + 'ms' : ''}`}
-        />
-      ))}
+      {processedLogs.map((log, index) => {
+        const isLast = index === lastIndex;
+        const shouldAnimate = isLast && isAnimating;
+        
+        return (
+          <div
+            key={log.id || `log-${index}-${log.timestamp}`}
+            className={`
+              w-1 h-full rounded-sm transition-all duration-300
+              ${getStatusColor(log.status)}
+              ${shouldAnimate ? `animate-heartbeat-bounce shadow-md ${getStatusGlow(log.status)}` : ''}
+              ${isLast && log.status !== 'empty' ? 'scale-y-110' : ''}
+            `}
+            title={`${log.status} - ${log.responseTime ? log.responseTime + 'ms' : ''}`}
+          />
+        );
+      })}
     </div>
   );
 }

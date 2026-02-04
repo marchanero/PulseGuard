@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, Globe, Clock, FileText, Check, AlertCircle, Server, Shield, Network, Activity, Eye, EyeOff } from 'lucide-react';
+import { Plus, Globe, Clock, FileText, Check, AlertCircle, Server, Shield, Network, Activity, Eye, EyeOff, Tag } from 'lucide-react';
+import ServiceTags from './ServiceTags';
 
 function ServiceForm({ onSubmit }) {
   const [formData, setFormData] = useState({
@@ -9,6 +10,7 @@ function ServiceForm({ onSubmit }) {
     host: '',
     port: '',
     description: '',
+    tags: [],
     checkInterval: 60,
     isActive: true,
     isPublic: false
@@ -88,7 +90,8 @@ function ServiceForm({ onSubmit }) {
           checkInterval: formData.checkInterval,
           isActive: formData.isActive,
           isPublic: formData.isPublic,
-          description: formData.description
+          description: formData.description,
+          tags: formData.tags
         };
         
         if (formData.type === 'HTTP' || formData.type === 'HTTPS') {
@@ -111,7 +114,8 @@ function ServiceForm({ onSubmit }) {
           url: '', 
           host: '',
           port: '',
-          description: '', 
+          description: '',
+          tags: [],
           checkInterval: 60, 
           isActive: true,
           isPublic: false
@@ -513,6 +517,29 @@ function ServiceForm({ onSubmit }) {
               ? 'Los servicios públicos son visibles en la página de estado (/status) sin necesidad de login'
               : 'Los servicios privados solo son visibles para usuarios autenticados'}
           </p>
+        </div>
+
+        {/* Tags */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
+            <span className="flex items-center gap-1.5">
+              <Tag className="w-3.5 h-3.5" />
+              Etiquetas <span className="text-slate-400 font-normal">(opcional)</span>
+            </span>
+          </label>
+          <div className="p-3 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg">
+            <ServiceTags
+              tags={formData.tags}
+              onChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
+              editable={true}
+              size="normal"
+            />
+            {formData.tags.length === 0 && (
+              <p className="text-xs text-slate-400 dark:text-gray-500 mt-1">
+                Añade etiquetas para organizar tus servicios
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Description */}
