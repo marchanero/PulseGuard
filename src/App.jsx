@@ -10,6 +10,9 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import { Login } from './components/Login.jsx';
 import { StatusPage } from './components/StatusPage.jsx';
+import StatisticsPage from './components/StatisticsPage.jsx';
+import HistoryPage from './components/HistoryPage.jsx';
+import ServiceDetailsPage from './components/ServiceDetailsPage.jsx';
 import { useAuth } from './hooks/useAuth.js';
 import EmptyState from './components/EmptyState';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
@@ -37,6 +40,8 @@ function App() {
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState('dashboard'); // dashboard, statistics, history, details
+  const [selectedServiceForPage, setSelectedServiceForPage] = useState(null);
   const toast = useToast();
   const { confirm } = useConfirm();
   const { isCompact, toggleCompact } = useCompactMode();
@@ -207,6 +212,26 @@ function App() {
     setIsDrawerOpen(true);
   };
 
+  const handleViewStatistics = (service) => {
+    setSelectedServiceForPage(service);
+    setCurrentPage('statistics');
+  };
+
+  const handleViewHistory = (service) => {
+    setSelectedServiceForPage(service);
+    setCurrentPage('history');
+  };
+
+  const handleViewDetails = (service) => {
+    setSelectedServiceForPage(service);
+    setCurrentPage('details');
+  };
+
+  const handleBackToDashboard = () => {
+    setCurrentPage('dashboard');
+    setSelectedServiceForPage(null);
+  };
+
   // Mostrar página de status pública
   if (isStatusPage) {
     return <StatusPage />;
@@ -227,6 +252,36 @@ function App() {
   // Mostrar login si no está autenticado
   if (!isAuthenticated) {
     return <Login />;
+  }
+
+  // Mostrar página de estadísticas
+  if (currentPage === 'statistics' && selectedServiceForPage) {
+    return (
+      <StatisticsPage
+        service={selectedServiceForPage}
+        onBack={handleBackToDashboard}
+      />
+    );
+  }
+
+  // Mostrar página de historial
+  if (currentPage === 'history' && selectedServiceForPage) {
+    return (
+      <HistoryPage
+        service={selectedServiceForPage}
+        onBack={handleBackToDashboard}
+      />
+    );
+  }
+
+  // Mostrar página de detalles
+  if (currentPage === 'details' && selectedServiceForPage) {
+    return (
+      <ServiceDetailsPage
+        serviceId={selectedServiceForPage.id}
+        onBack={handleBackToDashboard}
+      />
+    );
   }
 
   return (
@@ -292,10 +347,9 @@ function App() {
                     onDelete={handleDeleteService}
                     onCheck={handleCheckService}
                     onTogglePublic={handleTogglePublic}
-                    onViewDetails={(service) => {
-                      setSelectedService(service);
-                      setIsDrawerOpen(true);
-                    }}
+                    onViewDetails={handleViewDetails}
+                    onViewStatistics={handleViewStatistics}
+                    onViewHistory={handleViewHistory}
                     isCompact={isCompact}
                   />
                 ) : (
