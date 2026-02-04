@@ -3,6 +3,7 @@ import { Activity, Clock, Globe, Trash2, RefreshCw, BarChart3, FileText, MoreHor
 import ServiceCharts from './ServiceCharts';
 import { Tooltip } from './ui';
 import { HeartbeatBarCompact, UptimePercentages } from './HeartbeatBar';
+import { SSLBadge } from './SSLInfo';
 
 function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic, isCompact, onViewStatistics, onViewHistory }) {
   const [recentLogs, setRecentLogs] = useState([]);
@@ -189,7 +190,7 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
           </div>
 
           {/* Service Info */}
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h3 className="text-base font-semibold text-slate-900 dark:text-white truncate">
               {service.name}
             </h3>
@@ -201,6 +202,10 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
               {service.isPublic ? <Unlock className="w-2.5 h-2.5" /> : <Lock className="w-2.5 h-2.5" />}
               {service.isPublic ? 'Público' : 'Privado'}
             </span>
+            {/* SSL Badge para URLs HTTPS */}
+            {service.url?.startsWith('https://') && service.sslDaysRemaining !== undefined && (
+              <SSLBadge sslDaysRemaining={service.sslDaysRemaining} />
+            )}
           </div>
           <a 
             href={service.url} 
@@ -310,7 +315,7 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
 
         {/* Service Info */}
         <div className="mb-5">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">
               {service.name}
             </h3>
@@ -322,6 +327,10 @@ function ServiceCard({ service, onDelete, onCheck, onViewDetails, onTogglePublic
               {service.isPublic ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
               {service.isPublic ? 'Público' : 'Privado'}
             </span>
+            {/* SSL Badge para URLs HTTPS */}
+            {service.url?.startsWith('https://') && service.sslDaysRemaining !== undefined && (
+              <SSLBadge sslDaysRemaining={service.sslDaysRemaining} />
+            )}
           </div>
           <a 
             href={service.url} 

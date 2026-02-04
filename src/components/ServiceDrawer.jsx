@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import ServiceCharts from './ServiceCharts';
 import PerformanceChart from './PerformanceChart';
 import HeartbeatBar, { UptimePercentages } from './HeartbeatBar';
+import SSLInfo from './SSLInfo';
 
 function ServiceDrawer({ service, isOpen, onClose }) {
   const [logs, setLogs] = useState([]);
@@ -207,6 +208,18 @@ function ServiceDrawer({ service, isOpen, onClose }) {
 
             {/* Performance Chart */}
             <PerformanceChart serviceId={service.id} />
+
+            {/* SSL Certificate Info */}
+            {service.url?.startsWith('https://') && (service.sslExpiryDate || service.sslDaysRemaining !== undefined) && (
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Certificado SSL</h3>
+                <SSLInfo 
+                  sslExpiryDate={service.sslExpiryDate} 
+                  sslDaysRemaining={service.sslDaysRemaining}
+                  variant="full"
+                />
+              </div>
+            )}
 
             {/* Charts */}
             <div>

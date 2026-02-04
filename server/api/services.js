@@ -26,6 +26,8 @@ router.get('/', async (req, res) => {
       lastChecked: serviceTable.lastChecked,
       totalMonitoredTime: serviceTable.totalMonitoredTime,
       onlineTime: serviceTable.onlineTime,
+      sslExpiryDate: serviceTable.sslExpiryDate,
+      sslDaysRemaining: serviceTable.sslDaysRemaining,
       createdAt: serviceTable.createdAt,
       updatedAt: serviceTable.updatedAt,
       logs: sql<typeof serviceLogTable>`(SELECT json_group_array(
