@@ -10,17 +10,24 @@ dotenv.config();
 
 const router = express.Router();
 
-// Middleware de sesión con almacenamiento en memoria y cookies persistentes
+// Configuración de cookies optimizada para producción
+const getCookieOptions = () => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  return {
+    secure: isProduction,
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 horas
+    sameSite: isProduction ? 'none' : 'lax',
+    domain: isProduction ? '.fly.dev' : undefined
+  };
+};
+
+// Middleware de sesión con configuración optimizada
 export const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET || 'default-secret-change-this',
   resave: false,
   saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 horas
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
-  },
+  cookie: getCookieOptions(),
   name: 'pulseguard.sid'
 });
 
