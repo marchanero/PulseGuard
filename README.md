@@ -1,339 +1,387 @@
-# PulseGuard 🚀
+<p align="center">
+  <img src="https://img.shields.io/badge/🛡️_PulseGuard-Monitoring_Made_Beautiful-667eea?style=for-the-badge&labelColor=1a1a2e" alt="PulseGuard" />
+</p>
 
-> Sistema de monitorización de servicios en tiempo real con una interfaz moderna y dark mode
+<h1 align="center">
+  🛡️ PulseGuard
+</h1>
 
-[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite)](https://vitejs.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38B2AC?logo=tailwind-css)](https://tailwindcss.com/)
-[![Express](https://img.shields.io/badge/Express-5-000000?logo=express)](https://expressjs.com/)
-[![Drizzle ORM](https://img.shields.io/badge/Drizzle-0.45-FF6B35?logo=drizzle)](https://orm.drizzle.team/)
-[![TursoDB](https://img.shields.io/badge/TursoDB-LibSQL-4ADE80?logo=sqlite)](https://turso.io/)
+<h3 align="center">
+  Sistema de Monitorización de Servicios de Nueva Generación
+</h3>
 
-PulseGuard es una aplicación full-stack moderna para monitorizar el estado de tus servicios web en tiempo real. Con una interfaz elegante, dark mode, atajos de teclado, y verificación automática configurable.
+<p align="center">
+  <em>Mantén el pulso de tu infraestructura con estilo</em>
+</p>
 
-![Dashboard Preview](https://via.placeholder.com/800x400/1e293b/ffffff?text=PulseGuard+Dashboard)
+<p align="center">
+  <a href="https://pulseguard-fragrant-paper-4573.fly.dev">
+    <img src="https://img.shields.io/badge/🚀_Demo_Live-Visitar-667eea?style=for-the-badge" alt="Demo" />
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=white" alt="React" />
+  <img src="https://img.shields.io/badge/Vite-7-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/Tailwind-3-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white" alt="Tailwind" />
+  <img src="https://img.shields.io/badge/Express-5-000000?style=flat-square&logo=express&logoColor=white" alt="Express" />
+  <img src="https://img.shields.io/badge/Drizzle-ORM-FF6B35?style=flat-square" alt="Drizzle" />
+  <img src="https://img.shields.io/badge/TursoDB-Edge-4ADE80?style=flat-square" alt="TursoDB" />
+  <img src="https://img.shields.io/badge/Fly.io-Deployed-8B5CF6?style=flat-square&logo=fly.io&logoColor=white" alt="Fly.io" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/license/marchanero/PulseGuard?style=flat-square&color=green" alt="License" />
+  <img src="https://img.shields.io/github/stars/marchanero/PulseGuard?style=flat-square&color=yellow" alt="Stars" />
+  <img src="https://img.shields.io/github/last-commit/marchanero/PulseGuard?style=flat-square&color=blue" alt="Last Commit" />
+</p>
+
+---
+
+## ⚡ ¿Qué es PulseGuard?
+
+**PulseGuard** es una plataforma de monitorización full-stack moderna y elegante que te permite supervisar el estado de tus servicios web, APIs y servidores en tiempo real. 
+
+Diseñado con una UI/UX excepcional, dark mode por defecto, y potentes funcionalidades como Command Palette, atajos de teclado, y verificación automática configurable.
+
+<p align="center">
+  <img src="https://via.placeholder.com/900x450/0f172a/667eea?text=🛡️+PulseGuard+Dashboard" alt="Dashboard Preview" width="100%" />
+</p>
+
+### 🎯 Perfecto para:
+
+| 👤 Usuario | 💡 Caso de Uso |
+|:-----------|:---------------|
+| **DevOps** | Monitoriza toda tu infraestructura desde un solo lugar |
+| **Desarrolladores** | Vigila tus APIs y microservicios en desarrollo y producción |
+| **Equipos** | Comparte el estado con tu equipo mediante la página de status pública |
+| **Freelancers** | Mantén a tus clientes informados del estado de sus servicios |
+
+---
 
 ## ✨ Características
 
-### 🎯 Core
-- **Monitorización en tiempo real** - Verifica el estado de tus servicios automáticamente
-- **Intervalos configurables** - Desde 10 segundos hasta 1 hora
-- **Histórico de logs** - Registro completo de todas las verificaciones
-- **Múltiples estados** - Online, Offline, Degradado, Timeout, Desconocido
-- **Múltiples tipos de servicios** - HTTP, TCP, Ping, DNS y más
-- **Uptime tracking** - Cálculo automático de porcentaje de disponibilidad
-- **Métricas de rendimiento** - Latencia, tiempo de respuesta, código de estado
+<table>
+<tr>
+<td width="50%">
 
-### 🎨 UI/UX
-- **Dark/Light mode** - Cambio instantáneo con persistencia
-- **Modo compacto** - Para monitoreo constante con muchos servicios
-- **Vista Grid/Lista** - Adapta la visualización a tus necesidades
-- **Command Palette** - Búsqueda global con `Ctrl+K`
-- **Atajos de teclado** - Navegación rápida sin ratón
-- **Animaciones fluidas** - Transiciones suaves en toda la app
-- **Heatmap de uptime** - Visualización gráfica de disponibilidad
-- **Gráficas de rendimiento** - Tendencias de latencia y tiempos de respuesta
+### 🔍 Monitorización Inteligente
 
-### 🛠️ Funcionalidades
-- **Filtros avanzados** - Por estado, nombre, tiempo de respuesta
-- **Ordenamiento** - Por nombre, estado, uptime, última verificación
-- **Exportación de datos** - JSON y CSV
-- **Soft delete** - Elimina servicios preservando el historial
-- **Onboarding interactivo** - Tutorial para nuevos usuarios
-- **Gestión de incidentes** - Crear y rastrear incidentes por servicio
-- **Página de estado pública** - Comparte el estado con tus usuarios
+- ✅ **Múltiples protocolos**: HTTP, HTTPS, TCP, Ping, DNS
+- ✅ **Intervalos flexibles**: 10s, 30s, 1m, 5m, 15m, 30m, 1h
+- ✅ **Detección de estados**: Online, Offline, Degradado, Timeout
+- ✅ **Content matching**: Verifica contenido específico
+- ✅ **Uptime tracking**: Cálculo automático de disponibilidad
 
-## 🚀 Instalación
+</td>
+<td width="50%">
 
-### Requisitos
-- Node.js 18+
-- npm o yarn
+### 📊 Analytics y Métricas
 
-### Pasos
+- ✅ **Latencia histórica**: Gráficas de tendencias
+- ✅ **Heatmap visual**: Visualiza la salud a lo largo del tiempo
+- ✅ **Exportación**: JSON y CSV para reportes
+- ✅ **Dashboard overview**: Estadísticas agregadas
+- ✅ **Métricas de rendimiento**: Tiempos de respuesta
 
-1. **Clonar el repositorio**
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🎨 UI/UX Premium
+
+- ✅ **Dark/Light mode**: Cambio instantáneo con persistencia
+- ✅ **Command Palette**: Búsqueda global con `Ctrl+K`
+- ✅ **Atajos de teclado**: Navegación sin ratón
+- ✅ **Vista Grid/Lista**: Adapta la visualización
+- ✅ **Modo compacto**: Para muchos servicios
+- ✅ **Animaciones fluidas**: Micro-interacciones elegantes
+
+</td>
+<td width="50%">
+
+### 🛠️ Gestión Avanzada
+
+- ✅ **Filtros y ordenamiento**: Por estado, nombre, uptime
+- ✅ **Soft delete**: Elimina preservando historial
+- ✅ **Gestión de incidentes**: Trackea y documenta issues
+- ✅ **Status page pública**: Comparte con tus usuarios
+- ✅ **Autenticación**: Sistema completo de usuarios
+- ✅ **Onboarding**: Tutorial para nuevos usuarios
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🚀 Inicio Rápido
+
+### Prerrequisitos
+
+```
+Node.js 18+  •  npm o yarn  •  Cuenta en Turso (gratis)
+```
+
+### Instalación en 3 pasos
+
 ```bash
+# 1️⃣ Clonar el repositorio
 git clone https://github.com/marchanero/PulseGuard.git
 cd PulseGuard
-```
 
-2. **Instalar dependencias**
-```bash
+# 2️⃣ Instalar dependencias
 npm install
-```
 
-3. **Configurar la base de datos (TursoDB)**
-```bash
-# Crear archivo .env con las variables de entorno
+# 3️⃣ Configurar variables de entorno
 cp .env.example .env
+# Editar .env con tu DATABASE_URL de Turso
 
-# Editar .env con tu URL de Turso
-export DATABASE_URL="libsql://tu-db.turso.io?authToken=tu-token"
-```
-
-4. **Iniciar la aplicación**
-```bash
+# 🎉 Iniciar la aplicación
 npm run dev
 ```
 
-Esto iniciará:
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:3001
+> **Nota:** Esto iniciará Frontend en `http://localhost:5173` y Backend API en `http://localhost:3001`
 
-## ⌨️ Atajos de Teclado
-
-| Atajo | Acción |
-|-------|--------|
-| `Ctrl + N` | Añadir nuevo servicio |
-| `Ctrl + K` | Abrir Command Palette |
-| `/` | Buscar servicios |
-| `Esc` | Cerrar modales/drawers |
-| `G` | Cambiar vista (Grid/Lista) |
-| `F` | Abrir/cerrar filtros |
-| `R` | Refrescar datos |
-| `C` | Toggle modo compacto |
-| `?` | Mostrar ayuda de atajos |
-
-## 🚀 Despliegue en Fly.io
-
-PulseGuard está configurado para desplegarse automáticamente en [Fly.io](https://fly.io).
-
-### URL de producción
-
-🔗 **https://pulseguard-fragrant-paper-4573.fly.dev**
-
-### Despliegue automático
-
-El proyecto usa GitHub Actions para CI/CD:
-
-1. **Rama `develop`** → Desarrollo (sin despliegue)
-2. **Rama `main`** → Producción (despliegue automático)
-
-### Flujo de trabajo
-
-1. Trabaja en la rama `develop`
-2. Haz commits y push a `develop`
-3. Crea un Pull Request a `main`
-4. Merge a `main` → Se ejecuta el workflow de CI/CD
-5. Los tests pasan → Deploy automático a Fly.io
-
-### Configuración requerida
-
-Para el primer despliegue, necesitas:
-
-1. **Instalar flyctl**
-```bash
-curl -L https://fly.io/install.sh | sh
-```
-
-2. **Obtener token de API**
-```bash
-flyctl auth token
-```
-
-3. **Añadir secreto en GitHub**
-   - Ve a Settings → Secrets and variables → Actions
-   - Crea un secreto llamado `FLY_API_TOKEN`
-   - Pega el token obtenido
-
-### Variables de entorno en producción
-
-La base de datos usa [TursoDB](https://turso.io/) (libSQL) tanto en desarrollo como en producción. Configura los secretos en Fly.io:
-
-```bash
-fly secrets set DATABASE_URL="libsql://tu-db.turso.io?authToken=TU_TOKEN"
-fly secrets set TURSO_AUTH_TOKEN="tu-auth-token"
-```
-
-### Base de datos
-
-- **Desarrollo:** TursoDB (libSQL) - misma configuración que producción
-- **Producción:** TursoDB (libSQL)
-
-Las migraciones se aplican automáticamente en producción.
-
-## 📁 Estructura del Proyecto
-
-```
-PulseGuard/
-├── drizzle/                 # Configuración y migraciones de Drizzle
-├── prisma/                  # Schema legacy de Prisma (mantenido por compatibilidad)
-│   └── migrations/        # Migraciones existentes
-├── server/                  # Backend API
-│   ├── api/               # Rutas de la API
-│   ├── lib/               # Configuración de DB y schema (Drizzle)
-│   ├── utils/             # Utilidades (health checks, monitor)
-│   └── index.js           # Entry point del servidor
-├── src/                    # Frontend React
-│   ├── components/        # Componentes React
-│   ├── context/           # Contextos (tema, toast, auth)
-│   ├── hooks/             # Custom hooks
-│   └── utils/             # Utilidades frontend
-└── package.json
-```
-
-## 🔧 Configuración
-
-### Variables de entorno
-
-Crea un archivo `.env` en la raíz:
+<details>
+<summary>📋 Configuración detallada de variables de entorno</summary>
 
 ```env
-# Backend
-SESSION_SECRET="tu-secret-session"
+# 🔐 Backend
+SESSION_SECRET="genera-un-secret-seguro-aqui"
 PORT=3001
 
-# Base de datos TursoDB
-DATABASE_URL="libsql://tu-db.turso.io?authToken=TU_TOKEN"
+# 💾 Base de datos (TursoDB)
+DATABASE_URL="libsql://tu-db.turso.io"
 TURSO_AUTH_TOKEN="tu-auth-token"
 
-# Frontend
+# 🌐 Frontend (opcional en desarrollo)
 VITE_API_URL=http://localhost:3001/api
 ```
 
-### Intervalos de verificación
+</details>
 
-Puedes configurar el intervalo de verificación para cada servicio:
-- 10 segundos (para servicios críticos)
-- 30 segundos
-- 1 minuto
-- 5 minutos
-- 15 minutos
-- 30 minutos
-- 1 hora
+---
 
-## 📊 API Endpoints
+## ⌨️ Atajos de Teclado
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/api/services` | Listar todos los servicios |
-| POST | `/api/services` | Crear nuevo servicio |
-| GET | `/api/services/:id` | Obtener servicio por ID |
-| PUT | `/api/services/:id` | Actualizar servicio |
-| DELETE | `/api/services/:id` | Eliminar servicio (soft delete) |
-| POST | `/api/services/:id/check` | Verificar servicio manualmente |
-| POST | `/api/services/check-all` | Verificar todos los servicios |
-| POST | `/api/services/:id/restore` | Restaurar servicio eliminado |
-| DELETE | `/api/services/:id/permanent` | Eliminar permanentemente |
-| GET | `/api/services/:id/metrics` | Métricas de rendimiento del servicio |
-| GET | `/api/services/:id/uptime` | Estadísticas de uptime |
-| GET | `/api/analytics/overview` | Dashboard analytics |
-| GET | `/api/status/public` | Estado público de todos los servicios |
-| GET | `/api/incidents` | Listar incidentes |
-| POST | `/api/incidents` | Crear nuevo incidente |
-| GET | `/api/incidents/:id` | Obtener incidente por ID |
-| PUT | `/api/incidents/:id` | Actualizar incidente |
-| DELETE | `/api/incidents/:id` | Eliminar incidente |
-| POST | `/api/auth/register` | Registrar nuevo usuario |
-| POST | `/api/auth/login` | Iniciar sesión |
-| POST | `/api/auth/logout` | Cerrar sesión |
-| GET | `/api/auth/check` | Verificar sesión |
+PulseGuard está diseñado para usuarios power que aman los atajos.
 
-## 🛣️ Roadmap
+| Atajo | Acción |
+|:------|:-------|
+| <kbd>Ctrl</kbd> + <kbd>K</kbd> | 🔍 Command Palette |
+| <kbd>Ctrl</kbd> + <kbd>N</kbd> | ➕ Nuevo servicio |
+| <kbd>/</kbd> | 🔎 Buscar servicios |
+| <kbd>G</kbd> | 🔄 Cambiar vista Grid/Lista |
+| <kbd>C</kbd> | 📦 Modo compacto |
+| <kbd>R</kbd> | 🔄 Refrescar datos |
+| <kbd>F</kbd> | 🎛️ Abrir filtros |
+| <kbd>?</kbd> | ❓ Ayuda de atajos |
+| <kbd>Esc</kbd> | ✖️ Cerrar modales |
 
-### Próximas mejoras
-- [x] **Notificaciones** - Sistema base implementado
-- [x] **Autenticación** - Sistema de registro/login con JWT
-- [x] **Status Page pública** - Página de estado para tus clientes
-- [x] **Múltiples tipos de checks** - HTTP, TCP, Ping, DNS
-- [x] **Métricas de rendimiento** - Latencia y uptime tracking
-- [x] **Drizzle ORM** - Migración desde Prisma a Drizzle
-- [ ] **SSL Certificate monitoring** - Alertas de expiración de certificados
-- [ ] **Docker** - Contenedores para fácil despliegue
-- [ ] **Webhooks** - Integración con Slack, Discord, Telegram
-- [ ] **Checks desde múltiples ubicaciones** - US, EU, Asia
+---
 
-Consulta [`IMPROVEMENTS.md`](IMPROVEMENTS.md) para la lista completa de mejoras implementadas y pendientes.
+## 🌐 Despliegue en Producción
 
-## 🛡️ Tecnologías
+### Fly.io (Recomendado)
 
-### Frontend
-- **React 19** - UI library
-- **Vite** - Build tool ultrarrápido
-- **Tailwind CSS** - Framework de estilos
-- **Lucide React** - Iconos
-- **Recharts** - Gráficos y estadísticas
-
-### Backend
-- **Express.js 5** - Framework web
-- **Drizzle ORM** - ORM moderno y ligero
-- **TursoDB (libSQL)** - Base de datos cloud edge
-- **Node-cron** - Tareas programadas
-- **JWT** - Autenticación basada en tokens
-
-## 🤝 Contribuir
-
-Las contribuciones son bienvenidas. Por favor:
-
-1. Fork el repositorio
-2. Crea una rama (`git checkout -b feature/nueva-funcionalidad`)
-3. Commit tus cambios (`git commit -am 'Añadir nueva funcionalidad'`)
-4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
-5. Abre un Pull Request
-
-## 🧪 Testing
-
-PulseGuard cuenta con un sistema de testing completo configurado con Jest, React Testing Library, Supertest y Cypress.
-
-### Scripts de Testing
+PulseGuard está optimizado para Fly.io con despliegue automático:
 
 ```bash
-# Ejecutar todos los tests
-npm test
+# Instalar flyctl
+curl -L https://fly.io/install.sh | sh
 
-# Tests en modo watch (desarrollo)
-npm run test:watch
+# Login y configurar secretos
+fly auth login
+fly secrets set DATABASE_URL="libsql://tu-db.turso.io"
+fly secrets set TURSO_AUTH_TOKEN="tu-token"
+fly secrets set SESSION_SECRET="$(openssl rand -base64 32)"
 
-# Tests con cobertura
-npm run test:coverage
-
-# Tests solo de API
-npm run test:api
-
-# Tests solo de unidad (frontend)
-npm run test:unit
-
-# Tests E2E con Cypress
-npm run test:e2e
-
-# Abrir Cypress en modo interactivo
-npm run cypress:open
+# Desplegar 🚀
+fly deploy
 ```
 
-### Estructura de Tests
+<details>
+<summary>🔧 Script de ayuda incluido</summary>
+
+```bash
+# Ejecutar script de configuración
+./scripts/fly-setup.sh
+```
+
+</details>
+
+### 🔗 Demo en vivo
+
+<p align="center">
+  <a href="https://pulseguard-fragrant-paper-4573.fly.dev">
+    <img src="https://img.shields.io/badge/🌐_pulseguard--fragrant--paper--4573.fly.dev-Visitar-667eea?style=for-the-badge" alt="Demo Live" />
+  </a>
+</p>
+
+---
+
+## 📁 Arquitectura
 
 ```
 PulseGuard/
-├── src/
-│   ├── components/
-│   │   └── __tests__/           # Tests de componentes
-│   ├── hooks/
-│   │   └── __tests__/           # Tests de hooks
-│   └── utils/
-│       └── __tests__/           # Tests de utilidades
-├── server/
-│   └── __tests__/               # Tests de API
-├── cypress/
-│   ├── e2e/                     # Tests E2E
-│   ├── fixtures/                # Datos de prueba
-│   └── support/                 # Comandos y configuración
-├── __mocks__/                   # Mocks globales
-├── jest.config.js               # Configuración de Jest
-├── jest.setup.js                # Setup de Jest
-├── babel.config.js              # Configuración de Babel
-└── cypress.config.js            # Configuración de Cypress
+├── 📂 server/                 # 🖥️ Backend Express
+│   ├── api/                   # Endpoints REST
+│   │   ├── auth.js           # Autenticación
+│   │   ├── services.js       # CRUD servicios
+│   │   ├── analytics.js      # Métricas
+│   │   └── status.js         # Status público
+│   ├── lib/                   # Core
+│   │   ├── db.js             # Conexión Turso/Drizzle
+│   │   └── schema.js         # Esquema de BD
+│   └── utils/                 # Utilidades
+│       ├── checkTypes.js     # Health checks
+│       └── monitor.js        # Monitor automático
+│
+├── 📂 src/                    # ⚛️ Frontend React
+│   ├── components/           # Componentes UI
+│   ├── context/              # Estado global
+│   ├── hooks/                # Custom hooks
+│   └── utils/                # Helpers
+│
+├── 📂 cypress/                # 🧪 Tests E2E
+├── 📄 fly.toml               # Config Fly.io
+├── 📄 Dockerfile             # Container build
+└── 📄 drizzle.config.ts      # Config Drizzle ORM
 ```
+
+---
+
+## 📊 API Reference
+
+<details>
+<summary><b>📋 Ver todos los endpoints</b></summary>
+
+### Servicios
+| Método | Endpoint | Descripción |
+|:-------|:---------|:------------|
+| `GET` | `/api/services` | Listar servicios |
+| `POST` | `/api/services` | Crear servicio |
+| `GET` | `/api/services/:id` | Obtener servicio |
+| `PUT` | `/api/services/:id` | Actualizar servicio |
+| `DELETE` | `/api/services/:id` | Eliminar (soft) |
+| `POST` | `/api/services/:id/check` | Verificar ahora |
+| `GET` | `/api/services/:id/metrics` | Métricas |
+| `GET` | `/api/services/:id/uptime` | Estadísticas uptime |
+
+### Autenticación
+| Método | Endpoint | Descripción |
+|:-------|:---------|:------------|
+| `POST` | `/api/auth/register` | Registro |
+| `POST` | `/api/auth/login` | Login |
+| `POST` | `/api/auth/logout` | Logout |
+| `GET` | `/api/auth/check` | Verificar sesión |
+
+### Analytics & Status
+| Método | Endpoint | Descripción |
+|:-------|:---------|:------------|
+| `GET` | `/api/analytics/overview` | Dashboard stats |
+| `GET` | `/api/status/public` | Status público |
+| `GET` | `/api/incidents` | Listar incidentes |
+
+</details>
+
+---
+
+## 🛡️ Stack Tecnológico
+
+<table>
+<tr>
+<td align="center" width="20%">
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" width="40" />
+<br><b>React 19</b>
+</td>
+<td align="center" width="20%">
+<img src="https://vitejs.dev/logo.svg" width="40" />
+<br><b>Vite 7</b>
+</td>
+<td align="center" width="20%">
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/tailwindcss/tailwindcss-original.svg" width="40" />
+<br><b>Tailwind CSS</b>
+</td>
+<td align="center" width="20%">
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg" width="40" />
+<br><b>Express 5</b>
+</td>
+<td align="center" width="20%">
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/sqlite/sqlite-original.svg" width="40" />
+<br><b>TursoDB</b>
+</td>
+</tr>
+</table>
+
+---
+
+## 🗺️ Roadmap
+
+- [x] ✅ Monitorización multi-protocolo
+- [x] ✅ Dark/Light mode
+- [x] ✅ Command Palette
+- [x] ✅ Autenticación de usuarios
+- [x] ✅ Status page pública
+- [x] ✅ Métricas y analytics
+- [x] ✅ Drizzle ORM + TursoDB
+- [ ] 🔜 Notificaciones (Slack, Discord, Email)
+- [ ] 🔜 Checks desde múltiples regiones
+- [ ] 🔜 SSL Certificate monitoring
+- [ ] 🔜 Webhooks personalizados
+
+---
+
+## 🧪 Testing
+
+```bash
+npm test              # Todos los tests
+npm run test:coverage # Con cobertura
+npm run test:api      # Solo API
+npm run cypress:open  # E2E con Cypress
+```
+
+---
+
+## 🤝 Contribuir
+
+¡Las contribuciones son bienvenidas! 
+
+```bash
+git checkout -b feature/amazing-feature
+git commit -m '✨ Add amazing feature'
+git push origin feature/amazing-feature
+# Abrir Pull Request
+```
+
+---
 
 ## 📝 Licencia
 
-Este proyecto está bajo la licencia MIT. Ver [LICENSE](LICENSE) para más detalles.
+Distribuido bajo la licencia **MIT**. Ver [LICENSE](LICENSE) para más información.
+
+---
 
 ## 👨‍💻 Autor
 
-**Roberto Sánchez** - [@marchanero](https://github.com/marchanero)
+<p align="center">
+  <a href="https://github.com/marchanero">
+    <img src="https://img.shields.io/badge/GitHub-marchanero-181717?style=for-the-badge&logo=github" alt="GitHub" />
+  </a>
+</p>
 
 ---
 
 <p align="center">
-  <strong>⭐ Star este repo si te ha sido útil!</strong>
+  <b>¿Te gusta PulseGuard?</b>
+  <br><br>
+  <a href="https://github.com/marchanero/PulseGuard">
+    ⭐ Dale una estrella en GitHub
+  </a>
+</p>
+
+<p align="center">
+  <sub>Hecho con ❤️ y mucho ☕</sub>
 </p>
