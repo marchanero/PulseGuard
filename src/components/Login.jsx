@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Shield, Lock, Eye, EyeOff, ArrowRight, UserPlus } from 'lucide-react';
+import { Lock, Eye, EyeOff, ArrowRight, UserPlus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth.js';
 import { Button } from './ui';
 import { Register } from './Register.jsx';
@@ -34,24 +34,26 @@ export function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 flex items-start justify-center py-2 px-2">
       <div className="w-full max-w-md">
         {/* Logo y título */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg mb-4">
-            <Shield className="w-8 h-8 text-white" />
+        <div className="text-center mb-1">
+          <div className="flex justify-center">
+            <img 
+              src="/pulseguard_logo.png" 
+              alt="PulseGuard Logo" 
+              className="object-contain"
+              style={{width: '355px', height: '355px'}}
+            />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-            PulseGuard
-          </h1>
           <p className="text-slate-600 dark:text-gray-400">
             Panel de administración
           </p>
         </div>
 
         {/* Formulario */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-          <div className="flex items-center gap-3 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4">
+          <div className="flex items-center gap-3 mb-3">
             <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
               <Lock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
@@ -148,7 +150,7 @@ export function Login() {
           </form>
 
           {/* Enlace a registro */}
-          <div className="mt-6 text-center">
+          <div className="mt-3 text-center">
             <button
               onClick={() => setIsRegistering(true)}
               className="text-sm text-slate-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center justify-center gap-2"
@@ -160,7 +162,7 @@ export function Login() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-sm text-slate-500 dark:text-gray-400 mt-6">
+        <p className="text-center text-sm text-slate-500 dark:text-gray-400 mt-1">
           PulseGuard - Sistema de monitoreo de servicios
         </p>
       </div>
